@@ -1,211 +1,92 @@
-import {addDays, format, isSameDay, parseISO, startOfWeek} from "date-fns";
-import {motion} from "framer-motion";
-import {ScrollArea} from "@/components/ui/scroll-area";
-import {
-    fadeIn,
-    staggerContainer,
-    transition,
-} from "@/features/calendar/animations";
-import {useCalendar} from "@/features/calendar/contexts/calendar-context";
-import {AddEditEventDialog} from "@/features/calendar/dialogs/add-edit-event-dialog";
-import {DroppableArea} from "@/features/calendar/dnd/droppable-area";
-import {groupEvents, HOUR_HEIGHT_PX, useScrollPosition} from "@/features/calendar/helpers";
-import type {IEvent} from "@/features/calendar/interfaces";
-import {CalendarTimeline} from "@/features/calendar/views/week-and-day-view/calendar-time-line";
-import {RenderGroupedEvents} from "@/features/calendar/views/week-and-day-view/render-grouped-events";
-import {
-    WeekViewMultiDayEventsRow
-} from "@/features/calendar/views/week-and-day-view/week-view-multi-day-events-row";
-import {AlertCircleIcon} from 'lucide-react'
+import { addDays, format, isSameDay, startOfWeek } from "date-fns";
+import { useMemo, startTransition } from "react";
+import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { useMediaQuery } from "@/features/calendar/hooks";
+import type { IEvent } from "@/features/calendar/interfaces";
+import { TimeGrid, useTimeGridColumns } from "@/features/calendar/views/week-and-day-view/time-grid";
+import { WeekViewMultiDayEventsRow } from "@/features/calendar/views/week-and-day-view/week-view-multi-day-events-row";
 
 interface IProps {
-    singleDayEvents: IEvent[];
-    multiDayEvents: IEvent[];
+  singleDayEvents: IEvent[];
+  multiDayEvents: IEvent[];
 }
 
-export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
-    const {selectedDate, use24HourFormat, setSelectedDate, setView} = useCalendar();
-    const scrollPosition = useScrollPosition();
+export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
+  const { selectedDate, setSelectedDate, setView } = useCalendar();
+  const isSm = useMediaQuery("(min-width: 640px)");
 
-    const weekStart = startOfWeek(selectedDate);
-    const weekDays = Array.from({length: 7}, (_, i) => addDays(weekStart, i));
-    const hours = Array.from({length: 24}, (_, i) => i);
+  const weekKey = startOfWeek(selectedDate).toDateString();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one array per week
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(selectedDate);
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  }, [weekKey]);
 
-    return (
-        <motion.div
-            className="flex h-full flex-col"
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={fadeIn}
-            transition={transition}
-        >
-            <motion.div
-                className="flex min-h-0 flex-1 flex-col"
-                variants={staggerContainer}
-            >
-                <div>
-                    <WeekViewMultiDayEventsRow
-                        selectedDate={selectedDate}
-                        multiDayEvents={multiDayEvents}
-                    />
+  // Phones: each day gets at least 84px, so a week is wider than the screen
+  // and scrolls sideways. Days with overlapping events get more room.
+  const columns = useTimeGridColumns(weekDays, singleDayEvents, {
+    baseMin: isSm ? 0 : 84,
+    perGroupMin: isSm ? 72 : 64,
+  });
 
-                    {/* Week header */}
-                    <motion.div
-                        className="relative z-20 flex border-b"
-                        initial={{opacity: 0, y: -20}}
-                        animate={{opacity: 1, y: 0}}
-                        transition={transition}
+  return (
+    <div data-view="week" className="flex h-full flex-col">
+      <TimeGrid
+        columns={columns}
+        focusDay={selectedDate}
+        renderHeader={(gridStyle, gutter) => (
+          <>
+            <WeekViewMultiDayEventsRow
+              selectedDate={selectedDate}
+              multiDayEvents={multiDayEvents}
+              gridStyle={gridStyle}
+            />
+            <div className="flex border-b">
+              {gutter}
+              <div className="grid min-w-0 flex-1" style={gridStyle}>
+                {weekDays.map((day) => {
+                  const today = isSameDay(day, new Date());
+                  const selected = isSameDay(day, selectedDate);
+                  return (
+                    <button
+                      type="button"
+                      key={day.toISOString()}
+                      data-week-day-header={format(day, "yyyy-MM-dd")}
+                      className={`min-w-0 py-1 text-center text-xs font-medium text-t-quaternary sm:py-2 ${today ? "text-primary" : ""}`}
+                      onClick={() => {
+                        startTransition(() => {
+                          setSelectedDate(day);
+                          setView("day");
+                        });
+                      }}
                     >
-                        {/* Time column header - responsive width */}
-                        <div className="w-11 shrink-0 sm:w-18"></div>
-                        <div className="grid flex-1 grid-cols-7  border-l">
-                            {weekDays.map((day, index) => (
-                                <motion.span
-                                    key={day.toISOString()}
-                                    className={`py-1 sm:py-2 text-center text-xs font-medium text-t-quaternary ${isSameDay(day, new Date()) ? "text-primary" : ""}`}
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => { setSelectedDate(day); setView("day"); }}
-                                    initial={{opacity: 0, y: -10}}
-                                    animate={{opacity: 1, y: 0}}
-                                    transition={{delay: index * 0.05, ...transition}}
-                                >
-                                    {/* Mobile: Show only day abbreviation and number */}
-                                    <span className="block sm:hidden">
-									{format(day, "EEE").charAt(0)}
-                                        <span className={`mx-auto mt-0.5 flex size-6 items-center justify-center rounded-full font-semibold text-xs ${isSameDay(day, new Date()) ? "bg-primary text-primary-foreground" : "text-t-secondary"}`}>
-										{format(day, "d")}
-									</span>
-								</span>
-                                    {/* Desktop: Show full format */}
-                                    <span className="hidden sm:inline">
-									{format(day, "EE")}{" "}
-                                        <span className="ml-1 font-semibold text-t-secondary">
-										{format(day, "d")}
-									</span>
-								</span>
-                                </motion.span>
-                            ))}
-                        </div>
-                    </motion.div>
-
-                </div>
-
-                <ScrollArea className="min-h-0 flex-1" scrollPosition={scrollPosition} type="auto">
-                    <div className="flex">
-                        {/* Hours column */}
-                        <motion.div className="relative w-11 shrink-0 sm:w-18" variants={staggerContainer}>
-                            {hours.map((hour, index) => (
-                                <motion.div
-                                    key={hour}
-                                    className="relative"
-                                    style={{height: `${HOUR_HEIGHT_PX}px`}}
-                                    initial={{opacity: 0, x: -20}}
-                                    animate={{opacity: 1, x: 0}}
-                                    transition={{delay: index * 0.02, ...transition}}
-                                >
-                                    <div className="absolute -top-3 right-1 flex h-6 items-center sm:right-2">
-                                        {index !== 0 && (
-                                            <span className="whitespace-nowrap text-[10px] text-t-quaternary sm:text-xs">
-												{format(
-                                                    new Date().setHours(hour, 0, 0, 0),
-                                                    use24HourFormat ? "HH:00" : "h a",
-                                                )}
-											</span>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </motion.div>
-
-                        {/* Week grid */}
-                        <motion.div
-                            className="relative flex-1 border-l"
-                            variants={staggerContainer}
+                      {/* Phones: day letter and number */}
+                      <span className="block sm:hidden">
+                        {format(day, "EEE")}
+                        <span
+                          className={`mx-auto mt-0.5 flex size-6 items-center justify-center rounded-full text-xs font-semibold ${
+                            today
+                              ? "bg-primary text-primary-foreground"
+                              : selected
+                                ? "bg-muted text-t-secondary"
+                                : "text-t-secondary"
+                          }`}
                         >
-                            <div className="grid grid-cols-7 divide-x">
-                                {weekDays.map((day, dayIndex) => {
-                                    const dayEvents = singleDayEvents.filter(
-                                        (event) =>
-                                            isSameDay(parseISO(event.startDate), day) ||
-                                            isSameDay(parseISO(event.endDate), day),
-                                    );
-                                    const groupedEvents = groupEvents(dayEvents);
-
-                                    return (
-                                        <motion.div
-                                            key={day.toISOString()}
-                                            className="relative"
-                                            initial={{opacity: 0}}
-                                            animate={{opacity: 1}}
-                                            transition={{delay: dayIndex * 0.1, ...transition}}
-                                        >
-                                            {hours.map((hour, index) => (
-                                                <motion.div
-                                                    key={hour}
-                                                    className="relative"
-                                                    style={{height: `${HOUR_HEIGHT_PX}px`}}
-                                                    initial={{opacity: 0}}
-                                                    animate={{opacity: 1}}
-                                                    transition={{delay: index * 0.01, ...transition}}
-                                                >
-                                                    {index !== 0 && (
-                                                        <div
-                                                            className="pointer-events-none absolute inset-x-0 top-0 border-b"></div>
-                                                    )}
-
-                                                    <DroppableArea
-                                                        date={day}
-                                                        hour={hour}
-                                                        minute={0}
-                                                        className="absolute inset-x-0 top-0  h-[48px]"
-                                                    >
-                                                        <AddEditEventDialog
-                                                            startDate={day}
-                                                            startTime={{hour, minute: 0}}
-                                                        >
-                                                            <div
-                                                                className="absolute inset-0 cursor-pointer transition-colors hover:bg-secondary"/>
-                                                        </AddEditEventDialog>
-                                                    </DroppableArea>
-
-                                                    <div
-                                                        className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-b-tertiary"></div>
-
-                                                    <DroppableArea
-                                                        date={day}
-                                                        hour={hour}
-                                                        minute={30}
-                                                        className="absolute inset-x-0 bottom-0 h-[48px]"
-                                                    >
-                                                        <AddEditEventDialog
-                                                            startDate={day}
-                                                            startTime={{hour, minute: 30}}
-                                                        >
-                                                            <div
-                                                                className="absolute inset-0 cursor-pointer transition-colors hover:bg-secondary"/>
-                                                        </AddEditEventDialog>
-                                                    </DroppableArea>
-                                                </motion.div>
-                                            ))}
-
-                                            <RenderGroupedEvents
-                                                groupedEvents={groupedEvents}
-                                                day={day}
-                                            />
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-
-                            <CalendarTimeline/>
-                        </motion.div>
-                    </div>
-                </ScrollArea>
-            </motion.div>
-        </motion.div>
-    );
+                          {format(day, "d")}
+                        </span>
+                      </span>
+                      <span className="hidden sm:inline">
+                        {format(day, "EE")}{" "}
+                        <span className="ml-1 font-semibold text-t-secondary">{format(day, "d")}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+      />
+    </div>
+  );
 }
-
-

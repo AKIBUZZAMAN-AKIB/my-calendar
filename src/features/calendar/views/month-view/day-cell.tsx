@@ -1,26 +1,28 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { isToday, startOfDay, isSunday } from "date-fns";
-import { motion } from "framer-motion";
-import { useMemo, useCallback } from "react";
+import { isSaturday, isSunday, isToday, startOfDay } from "date-fns";
+import { memo, useMemo, useCallback } from "react";
 
 import { cn } from "@/lib/utils";
-import { transition } from "@/features/calendar/animations";
 import { EventListDialog } from "@/features/calendar/dialogs/events-list-dialog";
 import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
-import { getMonthCellEvents } from "@/features/calendar/helpers";
+import type { getMonthCellEvents } from "@/features/calendar/helpers";
 import { useMediaQuery } from "@/features/calendar/hooks";
 import type { ICalendarCell, IEvent } from "@/features/calendar/interfaces";
-import { MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
+import { chipHeight, MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
 
 interface IProps {
   cell: ICalendarCell;
-  events: IEvent[];
-  eventPositions: Record<string, number>;
+  /** This cell's events, worked out once for the whole month by the month view. */
+  cellEvents: ReturnType<typeof getMonthCellEvents>;
+  /** Text lines per chip on phones (the month view picks 1 or 2 from the room it has). */
+  lines: number;
+  monthStart: Date;
+  monthEnd: Date;
 }
 
 export const dayCellVariants = cva("text-white", {
@@ -46,15 +48,12 @@ export const dayCellVariants = cva("text-white", {
 
 const MAX_VISIBLE_EVENTS = 3;
 
-export function DayCell({ cell, events, eventPositions }: IProps) {
+export const DayCell = memo(function DayCell({ cell, cellEvents, lines, monthStart, monthEnd }: IProps) {
   const { day, currentMonth, date } = cell;
   const isMobile = useMediaQuery("(max-width: 1023px)");
+  const month = useMemo(() => ({ lines, monthStart, monthEnd }), [lines, monthStart, monthEnd]);
+  const rowHeight = isMobile ? chipHeight(lines) : undefined;
 
-  // Memoize cellEvents and currentCellMonth for performance
-  const cellEvents = useMemo(
-    () => getMonthCellEvents(date, events, eventPositions),
-    [date, events, eventPositions],
-  );
 
   // Memoize event rendering for each position with animation
   const renderEventAtPosition = useCallback(
@@ -62,28 +61,24 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
       const event = cellEvents.find((e) => e.position === position);
       if (!event) {
         return (
-          <motion.div
+          <div
             key={`empty-${position}`}
             className="h-4 lg:h-auto lg:flex-1"
-            initial={false}
-            animate={false}
+            style={rowHeight ? { height: rowHeight } : undefined}
           />
         );
       }
 
       return (
-        <motion.div
+        <div
           key={`event-${event.id}-${position}`}
           className="lg:flex-1"
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: position * 0.1, ...transition }}
         >
-          <MonthEventBadge event={event} cellDate={startOfDay(date)} compact={isMobile} />
-        </motion.div>
+          <MonthEventBadge event={event} cellDate={startOfDay(date)} compact={isMobile} month={month} />
+        </div>
       );
     },
-    [cellEvents, date, isMobile],
+    [cellEvents, date, isMobile, month, rowHeight],
   );
 
   const showMoreCount = cellEvents.length - MAX_VISIBLE_EVENTS;
@@ -93,21 +88,21 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
 
   const cellContent = useMemo(
     () => (
-      <motion.div
+      <div
+        data-month-cell
+        // the last day of the row: a bar that runs on ends at the screen edge
+        data-last-col={isSaturday(date) ? "" : undefined}
         className={cn(
           "flex h-full min-h-[80px] flex-col border-l border-t lg:min-h-40",
           isMobile && currentMonth && "cursor-pointer active:bg-accent/60",
           isSunday(date) && "border-l-0",
         )}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={transition}
       >
         <DroppableArea
           date={date}
           className="flex h-full w-full flex-col py-1 lg:py-2"
         >
-          <motion.span
+          <span
             className={cn(
               "mx-auto flex h-5 items-center text-xs font-semibold lg:mx-0 lg:h-6 lg:px-2",
               !currentMonth && "opacity-30",
@@ -116,9 +111,9 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
             )}
           >
             {day}
-          </motion.span>
+          </span>
 
-          <motion.div
+          <div
             className={cn(
               "mt-0.5 flex flex-col gap-0.5 lg:mt-1 lg:h-[94px] lg:gap-2",
               !currentMonth && "opacity-50",
@@ -139,7 +134,7 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
             ) : (
               [0, 1, 2].map(renderEventAtPosition)
             )}
-          </motion.div>
+          </div>
 
           {showMobileMore && (
             <div className="mt-auto px-1">
@@ -150,20 +145,17 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
           )}
 
           {showDesktopMore && (
-            <motion.div
+            <div
               className={cn(
                 "h-4.5 px-1.5 my-2 text-end text-xs font-semibold text-muted-foreground",
                 !currentMonth && "opacity-50",
               )}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, ...transition }}
             >
               <EventListDialog date={date} events={cellEvents} />
-            </motion.div>
+            </div>
           )}
         </DroppableArea>
-      </motion.div>
+      </div>
     ),
     [
       date,
@@ -187,4 +179,4 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
   }
 
   return cellContent;
-}
+});

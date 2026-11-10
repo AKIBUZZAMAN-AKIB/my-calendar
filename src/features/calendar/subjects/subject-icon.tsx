@@ -24,18 +24,29 @@ export function subjectColorClass(subject: Pick<ISubject, "id">) {
   return PALETTE[hash(subject.id) % PALETTE.length];
 }
 
-/** First visible character of the name (works for Bangla and emoji too). */
+let segmenter: Intl.Segmenter | null | undefined;
+const initials = new Map<string, string>();
+
+/** First visible character of the name (works for Bangla and emoji too). Cached. */
 export function subjectInitial(name: string) {
+  const cached = initials.get(name);
+  if (cached !== undefined) return cached;
   const trimmed = name.trim();
-  if (!trimmed) return "#";
-  try {
-    const seg = new Intl.Segmenter(undefined, { granularity: "grapheme" });
-    const first = seg.segment(trimmed)[Symbol.iterator]().next().value;
-    if (first) return first.segment.toLocaleUpperCase();
-  } catch {
-    // Intl.Segmenter missing: fall through
+  let result = "#";
+  if (trimmed) {
+    if (segmenter === undefined) {
+      try {
+        segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+      } catch {
+        segmenter = null; // Intl.Segmenter missing
+      }
+    }
+    const first = segmenter?.segment(trimmed)[Symbol.iterator]().next().value;
+    result = (first ? first.segment : Array.from(trimmed)[0]).toLocaleUpperCase();
   }
-  return Array.from(trimmed)[0].toLocaleUpperCase();
+  if (initials.size > 500) initials.clear();
+  initials.set(name, result);
+  return result;
 }
 
 /** A small square with the subject's first letter, always the same size. */

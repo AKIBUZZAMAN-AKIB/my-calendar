@@ -7,7 +7,7 @@ import {
   Grid3X3,
   List,
 } from "lucide-react";
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "../contexts/calendar-context";
 import type { TCalendarView } from "../types";
@@ -27,18 +27,31 @@ const tabs: { name: string; value: TCalendarView; Icon: typeof List }[] = [
  */
 function Views({ className }: { className?: string }) {
   const { view, setView } = useCalendar();
+  // Optimistic: the tapped tab lights up in the same frame, while the new view
+  // renders as a transition behind it.
+  const [shown, setShown] = useState(view);
+  useEffect(() => setShown(view), [view]);
+  const pending = shown !== view;
+
+  useEffect(() => {
+    const body = document.querySelector("[data-calendar-body]");
+    if (!body) return;
+    if (pending) body.setAttribute("data-pending", "true");
+    else body.removeAttribute("data-pending");
+  }, [pending]);
 
   return (
     <div
       role="tablist"
       aria-label="Calendar view"
+      aria-busy={pending}
       className={cn(
         "flex h-10 min-w-0 items-center gap-0.5 rounded-lg bg-muted p-1",
         className,
       )}
     >
       {tabs.map(({ Icon, name, value }) => {
-        const isActive = view === value;
+        const isActive = shown === value;
         return (
           <button
             key={value}
@@ -48,9 +61,13 @@ function Views({ className }: { className?: string }) {
             aria-label={name}
             title={name}
             data-view-btn={value}
-            onClick={() => setView(value)}
+            onClick={() => {
+              if (value === shown) return;
+              setShown(value);
+              setView(value);
+            }}
             className={cn(
-              "flex h-8 min-w-9 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "flex h-8 min-w-9 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium transition-colors duration-100 outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isActive
                 ? "flex-[1_0_auto] bg-background text-foreground shadow-sm lg:flex-none lg:px-3"
                 : "flex-1 text-muted-foreground hover:text-foreground lg:flex-none",

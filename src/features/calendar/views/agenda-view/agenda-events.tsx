@@ -1,15 +1,7 @@
 import { format, isToday, parseISO } from "date-fns";
-import { ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
-import { type FC, useState } from "react";
+import { ChevronDown, ChevronsDownUp, ChevronsUpDown, SearchIcon } from "lucide-react";
+import { type FC, useDeferredValue, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
 import {
@@ -49,23 +41,38 @@ export const AgendaEvents: FC = () => {
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
-  const monthEvents = getEventsForMonth(events, selectedDate).sort(
-    (a, b) => parseISO(a.startDate).getTime() - parseISO(b.startDate).getTime(),
+  // Plain list + own search (was cmdk, whose auto-select scrolled the page and
+  // re-sorted every item on mount, slowing the switch to Agenda).
+  const monthEvents = useMemo(
+    () =>
+      getEventsForMonth(events, selectedDate)
+        .map((e) => ({ e, t: parseISO(e.startDate).getTime() }))
+        .sort((a, b) => a.t - b.t)
+        .map((x) => x.e),
+    [events, selectedDate],
   );
 
-  const agendaEvents = Object.groupBy(monthEvents, (event) =>
-    agendaModeGroupBy === "date"
-      ? format(parseISO(event.startDate), "yyyy-MM-dd")
-      : event.color,
-  );
+  const deferredSearch = useDeferredValue(search);
+  const query = deferredSearch.trim().toLowerCase();
 
-  const groups = Object.entries(agendaEvents).sort((a, b) =>
-    agendaModeGroupBy === "date"
-      ? new Date(a[0]).getTime() - new Date(b[0]).getTime()
-      : a[0].localeCompare(b[0]),
-  );
+  const groups = useMemo(() => {
+    const shown = query
+      ? monthEvents.filter((event) =>
+          `${event.title} ${event.description} ${event.subject.name}`
+            .toLowerCase()
+            .includes(query),
+        )
+      : monthEvents;
+    const grouped = Object.groupBy(shown, (event) =>
+      agendaModeGroupBy === "date"
+        ? format(parseISO(event.startDate), "yyyy-MM-dd")
+        : event.color,
+    );
+    // keys are yyyy-MM-dd or colour names: both sort as text
+    return Object.entries(grouped).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [monthEvents, query, agendaModeGroupBy]);
 
-  const searching = search.trim().length > 0;
+  const searching = query.length > 0;
   const allCollapsed = groups.length > 0 && collapsed.size >= groups.length;
 
   const toggle = (key: string) =>
@@ -77,17 +84,20 @@ export const AgendaEvents: FC = () => {
     });
 
   return (
-    <Command
-      filter={(value, q) => (value.toLowerCase().includes(q.trim().toLowerCase()) ? 1 : 0)}
-      className="h-auto overflow-visible rounded-none bg-transparent" data-agenda>
+    <div className="h-auto" data-agenda>
       <div className="sticky top-0 z-20 flex items-center gap-2 border-b bg-background/95 px-2 py-2 backdrop-blur sm:px-4">
         <div className="min-w-0 flex-1 [&_[data-slot=command-input-wrapper]]:h-10 [&_[data-slot=command-input-wrapper]]:rounded-lg [&_[data-slot=command-input-wrapper]]:border [&_[data-slot=command-input-wrapper]]:border-b">
-          <CommandInput
-            value={search}
-            onValueChange={setSearch}
-            placeholder={`Search ${monthEvents.length} events…`}
-            className="text-base sm:text-sm"
-          />
+          <div data-slot="command-input-wrapper" className="flex h-9 items-center gap-2 rounded-md border px-3">
+            <SearchIcon className="size-4 shrink-0 opacity-50" />
+            <input
+              type="search"
+              data-slot="command-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Search ${monthEvents.length} events…`}
+              className="flex h-10 w-full rounded-md bg-transparent py-3 text-base outline-hidden placeholder:text-muted-foreground sm:text-sm [&::-webkit-search-cancel-button]:hidden"
+            />
+          </div>
         </div>
         <Button
           variant="ghost"
@@ -104,7 +114,7 @@ export const AgendaEvents: FC = () => {
         </Button>
       </div>
 
-      <CommandList className="max-h-none overflow-visible px-2 pb-24 sm:px-4 sm:pb-6">
+      <div role="list" className="px-2 pb-24 sm:px-4 sm:pb-6">
         {groups.map(([key, groupEvents]) => {
           const isCollapsed = !searching && collapsed.has(key);
           const today = agendaModeGroupBy === "date" && isToday(parseISO(key));
@@ -125,10 +135,7 @@ export const AgendaEvents: FC = () => {
           );
 
           return (
-            <CommandGroup
-              key={key}
-              className="overflow-visible p-0 [&_[cmdk-group-heading]]:p-0"
-              heading={
+            <section key={key} role="group">
                 <button
                   type="button"
                   data-agenda-group={key}
@@ -144,14 +151,12 @@ export const AgendaEvents: FC = () => {
                     />
                   </span>
                 </button>
-              }
-            >
               {groupEvents!.map((event) => (
-                <CommandItem
+                <div
                   key={event.id}
-                  value={`${event.title} ${event.description} ${event.subject.name} ${event.id}`}
+                  role="listitem"
                   className={cn(
-                    "mb-1.5 rounded-lg border p-0 data-[selected=true]:bg-accent/50",
+                    "mb-1.5 rounded-lg border p-0 hover:bg-accent/50",
                     isCollapsed && "hidden",
                   )}
                 >
@@ -194,13 +199,15 @@ export const AgendaEvents: FC = () => {
                       <SubjectIcon subject={event.subject} className="size-7 self-center" />
                     </div>
                   </EventDetailsDialog>
-                </CommandItem>
+                </div>
               ))}
-            </CommandGroup>
+            </section>
           );
         })}
-        <CommandEmpty>No events found.</CommandEmpty>
-      </CommandList>
-    </Command>
+        {groups.length === 0 && (
+          <p className="py-6 text-center text-sm">No events found.</p>
+        )}
+      </div>
+    </div>
   );
 };

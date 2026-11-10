@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  NO_SUBJECT,
   SUBJECT_NAME_MAX,
   useCalendar,
 } from "@/features/calendar/contexts/calendar-context";
@@ -37,7 +38,9 @@ export function SubjectPicker({
   allowRemove = false,
   invalid = false,
 }: SubjectPickerProps) {
-  const { subjects, addSubject, removeSubject } = useCalendar();
+  const { subjects, addSubject, removeSubject, subjectEventCounts } = useCalendar();
+  // In the filter, events left without a subject get their own chip
+  const unassigned = includeAll ? (subjectEventCounts[NO_SUBJECT.id] ?? 0) : 0;
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -129,6 +132,7 @@ export function SubjectPicker({
     >
       {includeAll && chip({ id: "all", name: "All subjects" })}
       {subjects.map((t) => chip(t))}
+      {unassigned > 0 && chip(NO_SUBJECT)}
 
       {creating ? (
         <div className="col-span-2 flex min-w-0 items-center gap-2">

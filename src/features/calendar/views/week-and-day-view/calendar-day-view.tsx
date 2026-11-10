@@ -1,18 +1,15 @@
 import { format, isWithinInterval, parseISO } from "date-fns";
 import { Calendar, Clock, Tag } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useMemo } from "react";
 import { DayPicker } from "@/components/ui/day-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 
-import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
-import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
-import { groupEvents, HOUR_HEIGHT_PX, useScrollPosition } from "@/features/calendar/helpers";
+import { useMediaQuery } from "@/features/calendar/hooks";
 import type { IEvent } from "@/features/calendar/interfaces";
-import { CalendarTimeline } from "@/features/calendar/views/week-and-day-view/calendar-time-line";
 import { DayViewMultiDayEventsRow } from "@/features/calendar/views/week-and-day-view/day-view-multi-day-events-row";
 import { MobileWeekStrip } from "@/features/calendar/views/week-and-day-view/mobile-week-strip";
-import { RenderGroupedEvents } from "@/features/calendar/views/week-and-day-view/render-grouped-events";
+import { TimeGrid, useTimeGridColumns } from "@/features/calendar/views/week-and-day-view/time-grid";
 
 interface IProps {
   singleDayEvents: IEvent[];
@@ -20,162 +17,55 @@ interface IProps {
 }
 
 export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
-  const { selectedDate, setSelectedDate, use24HourFormat } =
-    useCalendar();
-  const scrollPosition = useScrollPosition();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { selectedDate, setSelectedDate, use24HourFormat } = useCalendar();
+  const isSm = useMediaQuery("(min-width: 640px)");
 
-  const hours = Array.from({ length: 24 }, (_, i) => i);
+  const dayKey = selectedDate.toDateString();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one array per day
+  const days = useMemo(() => [selectedDate], [dayKey]);
 
-  useEffect(() => {
-    const handleDragOver = (e: DragEvent) => {
-      if (!scrollAreaRef.current) return;
-
-      const scrollArea = scrollAreaRef.current;
-      const rect = scrollArea.getBoundingClientRect();
-      const scrollSpeed = 15;
-
-      const scrollContainer =
-        scrollArea.querySelector("[data-radix-scroll-area-viewport]") ||
-        scrollArea;
-
-      if (e.clientY < rect.top + 60) {
-        scrollContainer.scrollTop -= scrollSpeed;
-      }
-
-      if (e.clientY > rect.bottom - 60) {
-        scrollContainer.scrollTop += scrollSpeed;
-      }
-    };
-
-    document.addEventListener("dragover", handleDragOver);
-    return () => {
-      document.removeEventListener("dragover", handleDragOver);
-    };
-  }, []);
-
-  const getCurrentEvents = (events: IEvent[]) => {
-    const now = new Date();
-
-    return (
-      events.filter((event) =>
-        isWithinInterval(now, {
-          start: parseISO(event.startDate),
-          end: parseISO(event.endDate),
-        }),
-      ) || []
-    );
-  };
-
-  const currentEvents = getCurrentEvents(singleDayEvents);
-
-  const dayEvents = singleDayEvents.filter((event) => {
-    const eventDate = parseISO(event.startDate);
-    return (
-      eventDate.getDate() === selectedDate.getDate() &&
-      eventDate.getMonth() === selectedDate.getMonth() &&
-      eventDate.getFullYear() === selectedDate.getFullYear()
-    );
+  // Overlapping events sit side by side. On a phone each gets at least 120px,
+  // so a busy day scrolls sideways instead of squeezing the titles away.
+  const columns = useTimeGridColumns(days, singleDayEvents, {
+    baseMin: 0,
+    perGroupMin: isSm ? 140 : 120,
   });
 
-  const groupedEvents = groupEvents(dayEvents);
+  const currentEvents = useMemo(() => {
+    const now = new Date();
+    return singleDayEvents.filter((event) =>
+      isWithinInterval(now, {
+        start: parseISO(event.startDate),
+        end: parseISO(event.endDate),
+      }),
+    );
+  }, [singleDayEvents]);
 
   return (
-    <div className="flex h-full">
+    <div data-view="day" className="flex h-full">
       <div className="flex min-w-0 flex-1 flex-col">
-        <div>
-          <MobileWeekStrip events={singleDayEvents} />
-          <DayViewMultiDayEventsRow
-            selectedDate={selectedDate}
-            multiDayEvents={multiDayEvents}
-          />
-
-          {/* Day header */}
-          <div className="relative z-20 hidden border-b lg:flex">
-            <div className="w-11 shrink-0 sm:w-18"></div>
-            <span className="hidden flex-1 border-l py-2 lg:block text-center text-xs font-medium text-t-quaternary">
-              {format(selectedDate, "EE")}{" "}
-              <span className="font-semibold text-t-secondary">
-                {format(selectedDate, "d")}
-              </span>
-            </span>
-          </div>
-        </div>
-        <ScrollArea className="min-h-0 flex-1" type="auto" ref={scrollAreaRef} scrollPosition={scrollPosition}>
-          <div className="flex">
-            {/* Hours column */}
-            <div className="relative w-11 shrink-0 sm:w-18">
-              {hours.map((hour, index) => (
-                <div key={hour} className="relative" style={{ height: `${HOUR_HEIGHT_PX}px` }}>
-                  <div className="absolute -top-3 right-1 flex h-6 items-center sm:right-2">
-                    {index !== 0 && (
-                      <span className="whitespace-nowrap text-[10px] text-t-quaternary sm:text-xs">
-                        {format(
-                          new Date().setHours(hour, 0, 0, 0),
-                          use24HourFormat ? "HH:00" : "h a",
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Day grid */}
-            <div className="relative flex-1 border-l">
-              <div className="relative">
-                {hours.map((hour, index) => (
-                  <div
-                    key={hour}
-                    className="relative"
-                    style={{ height: `${HOUR_HEIGHT_PX}px` }}
-                  >
-                    {index !== 0 && (
-                      <div className="pointer-events-none absolute inset-x-0 top-0 border-b"></div>
-                    )}
-
-                    <DroppableArea
-                      date={selectedDate}
-                      hour={hour}
-                      minute={0}
-                      className="absolute inset-x-0 top-0 h-[48px]"
-                    >
-                      <AddEditEventDialog
-                        startDate={selectedDate}
-                        startTime={{ hour, minute: 0 }}
-                      >
-                        <div className="absolute inset-0 cursor-pointer transition-colors hover:bg-secondary" />
-                      </AddEditEventDialog>
-                    </DroppableArea>
-
-                    <div className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-b-tertiary"></div>
-
-                    <DroppableArea
-                      date={selectedDate}
-                      hour={hour}
-                      minute={30}
-                      className="absolute inset-x-0 bottom-0 h-[48px]"
-                    >
-                      <AddEditEventDialog
-                        startDate={selectedDate}
-                        startTime={{ hour, minute: 30 }}
-                      >
-                        <div className="absolute inset-0 cursor-pointer transition-colors hover:bg-secondary" />
-                      </AddEditEventDialog>
-                    </DroppableArea>
-                  </div>
-                ))}
-
-                <RenderGroupedEvents
-                  groupedEvents={groupedEvents}
-                  day={selectedDate}
-                />
+        <MobileWeekStrip events={singleDayEvents} />
+        <TimeGrid
+          columns={columns}
+          renderHeader={() => (
+            <>
+              <DayViewMultiDayEventsRow
+                selectedDate={selectedDate}
+                multiDayEvents={multiDayEvents}
+              />
+              {/* Day header (desktop) */}
+              <div className="hidden border-b lg:flex">
+                <div className="sticky left-0 z-20 w-11 shrink-0 border-r bg-background sm:w-18" />
+                <span className="flex-1 py-2 text-center text-xs font-medium text-t-quaternary">
+                  {format(selectedDate, "EE")}{" "}
+                  <span className="font-semibold text-t-secondary">
+                    {format(selectedDate, "d")}
+                  </span>
+                </span>
               </div>
-
-              <CalendarTimeline />
-            </div>
-          </div>
-        </ScrollArea>
+            </>
+          )}
+        />
       </div>
 
       <div className="hidden w-72 flex-col divide-y border-l lg:flex">

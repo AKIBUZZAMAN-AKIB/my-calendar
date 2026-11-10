@@ -195,26 +195,25 @@ export function calculateMonthEventPositions(
 		occupiedPositions[day.toISOString()] = [false, false, false];
 	});
 
+	// Only events that touch this month, sorted on copies (the arrays are shared
+	// with the other views and must not be reordered in place).
+	const span = (e: IEvent) => {
+		const start = parseISO(e.startDate);
+		const end = parseISO(e.endDate);
+		return { e, start, end, t: start.getTime(), d: differenceInDays(end, start) };
+	};
+	const inMonth = (x: { start: Date; end: Date }) =>
+		x.start <= monthEnd && x.end >= monthStart;
 	const sortedEvents = [
-		...multiDayEvents.sort((a, b) => {
-			const aDuration = differenceInDays(
-				parseISO(a.endDate),
-				parseISO(a.startDate),
-			);
-			const bDuration = differenceInDays(
-				parseISO(b.endDate),
-				parseISO(b.startDate),
-			);
-			return (
-				bDuration - aDuration ||
-				parseISO(a.startDate).getTime() - parseISO(b.startDate).getTime()
-			);
-		}),
-		...singleDayEvents.sort(
-			(a, b) =>
-				parseISO(a.startDate).getTime() - parseISO(b.startDate).getTime(),
-		),
-	];
+		...multiDayEvents
+			.map(span)
+			.filter(inMonth)
+			.sort((a, b) => b.d - a.d || a.t - b.t),
+		...singleDayEvents
+			.map(span)
+			.filter(inMonth)
+			.sort((a, b) => a.t - b.t),
+	].map((x) => x.e);
 
 	sortedEvents.forEach((event) => {
 		const eventStart = parseISO(event.startDate);
@@ -248,6 +247,48 @@ export function calculateMonthEventPositions(
 	});
 
 	return eventPositions;
+}
+
+/**
+ * Events of every visible month cell, in one pass: dates are parsed once per
+ * event instead of once per event per cell. Keyed by the cell's ISO date.
+ */
+export function getMonthCellEventsMap(
+	cells: ICalendarCell[],
+	events: IEvent[],
+	eventPositions: Record<string, number>,
+) {
+	const map = new Map<string, ReturnType<typeof getMonthCellEvents>>();
+	if (cells.length === 0) return map;
+	const first = startOfDay(cells[0].date).getTime();
+	const last = startOfDay(cells[cells.length - 1].date).getTime();
+	const spans = events
+		.map((event) => {
+			const start = parseISO(event.startDate);
+			return {
+				event,
+				from: startOfDay(start).getTime(),
+				to: parseISO(event.endDate).getTime(),
+			};
+		})
+		.filter((x) => x.from <= last && x.to >= first);
+	for (const cell of cells) {
+		const day = startOfDay(cell.date).getTime();
+		const list = spans
+			.filter((x) => x.from <= day && day <= x.to)
+			.map(({ event }) => ({
+				...event,
+				position: eventPositions[event.id] ?? -1,
+				isMultiDay: event.startDate !== event.endDate,
+			}))
+			.sort((a, b) => {
+				if (a.isMultiDay && !b.isMultiDay) return -1;
+				if (!a.isMultiDay && b.isMultiDay) return 1;
+				return a.position - b.position;
+			});
+		map.set(cell.date.toISOString(), list);
+	}
+	return map;
 }
 
 export function getMonthCellEvents(
@@ -445,3 +486,84 @@ export const useScrollPosition = () => {
 	const { startOfDayHour } = useCalendar();
 	return startOfDayHour * HOUR_HEIGHT_PX;
 };
+/** Shortest box drawn in the hour grid, in minutes, so every box keeps a readable title line. */
+export const MIN_EVENT_BOX_MINUTES = 20;
+
+export interface PositionedEvent {
+	event: IEvent;
+	/** minutes from the start of the day to the top of the box */
+	top: number;
+	/** minutes the box covers (at least MIN_EVENT_BOX_MINUTES) */
+	height: number;
+	/** real length of the event part on this day, in minutes */
+	duration: number;
+	/** column index and how many columns it spans, out of `cols` */
+	col: number;
+	span: number;
+	cols: number;
+}
+
+/**
+ * Lays out one day's timed events the way Google Calendar does:
+ * events that overlap (directly or through a chain) form a cluster; each
+ * cluster is split into as many equal columns as it needs; every event takes
+ * the first free column and then stretches right over columns that are free
+ * for its whole time. Boxes never leave the day column.
+ */
+export function layoutDayEvents(dayEvents: IEvent[], day: Date): PositionedEvent[] {
+	const dayStart = startOfDay(day).getTime();
+	const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+	const items = dayEvents
+		.map((event) => {
+			const s = Math.max(parseISO(event.startDate).getTime(), dayStart);
+			const e = Math.min(parseISO(event.endDate).getTime(), dayEnd);
+			const top = Math.round((s - dayStart) / 60000);
+			const duration = Math.max(0, Math.round((e - s) / 60000));
+			// the box is at least MIN minutes tall, but never runs past midnight
+			const height = Math.min(Math.max(duration, MIN_EVENT_BOX_MINUTES), 1440 - top);
+			const boxTop = Math.min(top, 1440 - height);
+			return { event, top: boxTop, height, duration, end: boxTop + height, col: 0, span: 1, cols: 1 };
+		})
+		.filter((it) => it.height > 0)
+		.sort((a, b) => a.top - b.top || b.end - a.end);
+
+	const out: PositionedEvent[] = [];
+	let cluster: typeof items = [];
+	let clusterEnd = -1;
+
+	const flush = () => {
+		if (!cluster.length) return;
+		const colEnds: number[] = [];
+		for (const it of cluster) {
+			let c = colEnds.findIndex((end) => end <= it.top);
+			if (c === -1) {
+				c = colEnds.length;
+				colEnds.push(it.end);
+			} else colEnds[c] = it.end;
+			it.col = c;
+		}
+		const cols = colEnds.length;
+		for (const it of cluster) {
+			let span = 1;
+			while (
+				it.col + span < cols &&
+				!cluster.some(
+					(o) => o !== it && o.col === it.col + span && o.top < it.end && it.top < o.end,
+				)
+			) {
+				span++;
+			}
+			out.push({ event: it.event, top: it.top, height: it.height, duration: it.duration, col: it.col, span, cols });
+		}
+		cluster = [];
+		clusterEnd = -1;
+	};
+
+	for (const it of items) {
+		if (cluster.length && it.top >= clusterEnd) flush();
+		cluster.push(it);
+		clusterEnd = Math.max(clusterEnd, it.end);
+	}
+	flush();
+	return out;
+}

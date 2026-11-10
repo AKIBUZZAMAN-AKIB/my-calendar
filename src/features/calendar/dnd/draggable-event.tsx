@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import type React from "react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useDragDrop } from "@/features/calendar/contexts/dnd-context";
@@ -32,8 +31,10 @@ function findScrollParent(el: HTMLElement | null): HTMLElement | null {
   while (node && node !== document.body) {
     const style = getComputedStyle(node);
     if (
-      /(auto|scroll)/.test(style.overflowY) &&
-      node.scrollHeight > node.clientHeight + 1
+      (/(auto|scroll)/.test(style.overflowY) &&
+        node.scrollHeight > node.clientHeight + 1) ||
+      (/(auto|scroll)/.test(style.overflowX) &&
+        node.scrollWidth > node.clientWidth + 1)
     ) {
       return node;
     }
@@ -109,13 +110,23 @@ export function DraggableEvent({
       document.removeEventListener("touchcancel", onCancel);
     };
 
+    // Edge auto-scroll waits until the finger has really moved: an event that
+    // sits near an edge must not start the grid scrolling just by being held.
+    let armed = false;
     const autoScroll = () => {
+      if (!armed && Math.hypot(lastX - startX, lastY - startY) > 24) armed = true;
       if (!active) return;
-      if (scroller) {
+      if (scroller && armed) {
         const r = scroller.getBoundingClientRect();
         if (lastY < r.top + AUTO_SCROLL_EDGE_PX) scroller.scrollTop -= 8;
         else if (lastY > r.bottom - AUTO_SCROLL_EDGE_PX)
           scroller.scrollTop += 8;
+        // sideways too (week / day grid wider than the screen); the left edge
+        // sits past the sticky hour column
+        if (scroller.scrollWidth > scroller.clientWidth + 1) {
+          if (lastX < r.left + 44 + AUTO_SCROLL_EDGE_PX / 2) scroller.scrollLeft -= 8;
+          else if (lastX > r.right - AUTO_SCROLL_EDGE_PX / 2) scroller.scrollLeft += 8;
+        }
         setOver(findDropTarget(lastX, lastY));
       }
       raf = requestAnimationFrame(autoScroll);
@@ -149,6 +160,7 @@ export function DraggableEvent({
       el.style.opacity = "0.35";
       document.body.classList.add("touch-dragging");
       scroller = findScrollParent(el);
+      armed = false;
       latest.current.startDrag(latest.current.event);
       setOver(findDropTarget(lastX, lastY));
       raf = requestAnimationFrame(autoScroll);
@@ -227,7 +239,7 @@ export function DraggableEvent({
   const isCurrentlyDragged = isDragging && draggedEvent?.id === event.id;
 
   return (
-    <motion.div
+    <div
       ref={ref}
       data-event-id={event.id}
       className={`${className || ""} touch-callout-none select-none ${isCurrentlyDragged ? "opacity-50 cursor-grabbing" : "cursor-grab"}`}
@@ -236,7 +248,7 @@ export function DraggableEvent({
         if (!passClick) e.stopPropagation();
       }}
       onDragStart={(e) => {
-        (e as unknown as DragEvent).dataTransfer?.setData(
+        e.dataTransfer?.setData(
           "text/plain",
           event.id.toString(),
         );
@@ -247,6 +259,6 @@ export function DraggableEvent({
       }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

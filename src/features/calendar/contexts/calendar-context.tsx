@@ -1,7 +1,15 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  startTransition,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { COLORS } from "@/features/calendar/constants";
 import { useLocalStorage } from "@/features/calendar/hooks";
@@ -29,8 +37,16 @@ interface ICalendarContext {
   subjects: ISubject[];
   /** Creates a subject (or returns the existing one with the same name). */
   addSubject: (name: string) => { subject: ISubject; created: boolean } | null;
-  /** Removes a subject the user created. Built-in subjects cannot be removed. */
+  /** Deletes a subject; its events get "No subject". */
   removeSubject: (subjectId: ISubject["id"]) => void;
+  /** Renames a subject (and the copy every event keeps). Names stay unique. */
+  renameSubject: (subjectId: ISubject["id"], name: string) => { ok: boolean; error?: string };
+  /** Deletes a subject. Its events move to `moveToId`, or get "No subject" when it is left out. */
+  deleteSubject: (subjectId: ISubject["id"], moveToId?: ISubject["id"]) => void;
+  /** Moves all events of `sourceIds` to `targetId` and deletes the sources. Returns how many events moved. */
+  mergeSubjects: (sourceIds: ISubject["id"][], targetId: ISubject["id"]) => number;
+  /** Events per subject id, counting every event (filters ignored). */
+  subjectEventCounts: Record<string, number>;
   events: IEvent[];
   /** false until the saved events have been read from this device. */
   eventsLoaded: boolean;
@@ -54,11 +70,12 @@ interface CalendarSettings {
 export const MIN_SCROLL_HOUR = 0;
 export const SUBJECT_NAME_MAX = 100;
 const SUBJECTS_STORAGE_KEY = "calendar-subjects";
+const SUBJECTS_STORAGE_VERSION = 2;
 /** Older builds kept user subjects under this key (when they were called "topics"). */
 const LEGACY_SUBJECTS_STORAGE_KEY = "calendar-topics";
 const EVENTS_STORAGE_KEY = "calendar-events";
 const EVENTS_STORAGE_VERSION = 1;
-const NO_SUBJECT: ISubject = { id: "subject-none", name: "No subject" };
+export const NO_SUBJECT: ISubject = { id: "subject-none", name: "No subject" };
 
 /** Any date the app may have stored -> exact ISO instant (UTC, with Z), or null. */
 function toIso(value: unknown): string | null {
@@ -203,8 +220,17 @@ export function CalendarProvider({
     }
   }, [allEvents, eventsLoaded]);
 
-  // Subjects the user created. Loaded after mount so server and client render the same HTML.
-  const [customSubjects, setCustomSubjects] = useState<ISubject[]>([]);
+  // The subject list (built-in ones the user kept + ones they created). Saved
+  // as { version: 2, subjects } so built-in subjects can be renamed or removed
+  // too. Older saves (a plain array of created subjects, or the "topics" key)
+  // are read and upgraded without losing anything. Loaded after mount so server
+  // and client render the same HTML.
+  const [subjects, setSubjects] = useState<ISubject[]>(defaultSubjects);
+  const subjectsRef = useRef(subjects);
+  subjectsRef.current = subjects;
+  const allEventsRef = useRef(allEvents);
+  allEventsRef.current = allEvents;
+
   useEffect(() => {
     try {
       let raw = window.localStorage.getItem(SUBJECTS_STORAGE_KEY);
@@ -213,71 +239,135 @@ export function CalendarProvider({
         raw = window.localStorage.getItem(LEGACY_SUBJECTS_STORAGE_KEY);
         fromLegacy = raw !== null;
       }
-      const parsed = raw ? (JSON.parse(raw) as ISubject[]) : [];
-      if (Array.isArray(parsed)) {
-        const list = parsed
-          .filter((t) => t && typeof t.id === "string" && typeof t.name === "string")
-          .map((t) => ({ id: t.id, name: t.name, custom: true }));
-        setCustomSubjects(list);
-        if (fromLegacy) {
-          // move subjects saved by the older "topics" build to the new key
-          window.localStorage.setItem(SUBJECTS_STORAGE_KEY, JSON.stringify(list));
-          window.localStorage.removeItem(LEGACY_SUBJECTS_STORAGE_KEY);
-        }
+      if (raw === null) return;
+      const parsed = JSON.parse(raw);
+      const clean = (list: unknown[]): ISubject[] =>
+        list
+          .filter(
+            (t): t is ISubject =>
+              !!t && typeof (t as ISubject).id === "string" && typeof (t as ISubject).name === "string",
+          )
+          .map((t) => ({ id: t.id, name: t.name, ...(t.custom ? { custom: true } : {}) }));
+      let next: ISubject[] | null = null;
+      if (parsed && !Array.isArray(parsed) && Array.isArray(parsed.subjects)) {
+        next = clean(parsed.subjects);
+      } else if (Array.isArray(parsed)) {
+        // v1: only the created subjects were saved; built-ins came from code
+        next = [...defaultSubjects, ...clean(parsed).map((t) => ({ ...t, custom: true }))];
+        window.localStorage.setItem(`${SUBJECTS_STORAGE_KEY}-v1-backup`, raw);
       }
+      if (!next) return;
+      // never two subjects with the same id
+      const seen = new Set<string>();
+      next = next.filter((t) => (seen.has(t.id) ? false : (seen.add(t.id), true)));
+      setSubjects(next);
+      window.localStorage.setItem(
+        SUBJECTS_STORAGE_KEY,
+        JSON.stringify({ version: SUBJECTS_STORAGE_VERSION, subjects: next }),
+      );
+      if (fromLegacy) window.localStorage.removeItem(LEGACY_SUBJECTS_STORAGE_KEY);
     } catch (error) {
       console.warn("Could not read saved subjects", error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const saveCustomSubjects = (next: ISubject[]) => {
-    setCustomSubjects(next);
+  const saveSubjects = (next: ISubject[]) => {
+    subjectsRef.current = next;
+    setSubjects(next);
     try {
-      window.localStorage.setItem(SUBJECTS_STORAGE_KEY, JSON.stringify(next));
+      window.localStorage.setItem(
+        SUBJECTS_STORAGE_KEY,
+        JSON.stringify({ version: SUBJECTS_STORAGE_VERSION, subjects: next }),
+      );
     } catch (error) {
       console.warn("Could not save subjects", error);
+      toast.error("Could not save subjects on this device");
     }
   };
 
-  const subjects = useMemo(
-    () => [...defaultSubjects, ...customSubjects],
-    [defaultSubjects, customSubjects],
-  );
+  const cleanName = (rawName: string) =>
+    rawName.replace(/\s+/g, " ").trim().slice(0, SUBJECT_NAME_MAX);
+  const sameName = (a: string, b: string) => a.toLocaleLowerCase() === b.toLocaleLowerCase();
+
+  /** Number of events (all of them, not just the filtered ones) per subject id. */
+  const subjectEventCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const e of allEvents) counts[e.subject.id] = (counts[e.subject.id] ?? 0) + 1;
+    return counts;
+  }, [allEvents]);
 
   const addSubject = (rawName: string) => {
-    const name = rawName.replace(/\s+/g, " ").trim().slice(0, SUBJECT_NAME_MAX);
+    const name = cleanName(rawName);
     if (!name) return null;
-    const existing = subjects.find(
-      (t) => t.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
-    );
+    const list = subjectsRef.current;
+    const existing = list.find((t) => sameName(t.name, name));
     if (existing) return { subject: existing, created: false };
     // Re-creating a deleted subject reconnects the events that still carry it.
-    const orphan = allEvents.find(
+    const orphan = allEventsRef.current.find(
       (e) =>
         e.subject.id !== NO_SUBJECT.id &&
-        e.subject.name.toLocaleLowerCase() === name.toLocaleLowerCase() &&
-        !subjects.some((t) => t.id === e.subject.id),
+        sameName(e.subject.name, name) &&
+        !list.some((t) => t.id === e.subject.id),
     )?.subject;
     const subject: ISubject = orphan ? { id: orphan.id, name, custom: true } : {
       id: `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
       name,
       custom: true,
     };
-    saveCustomSubjects([...customSubjects, subject]);
+    saveSubjects([...list, subject]);
     return { subject, created: true };
   };
 
-  const removeSubject = (subjectId: ISubject["id"]) => {
-    const removed = customSubjects.find((t) => t.id === subjectId);
-    saveCustomSubjects(customSubjects.filter((t) => t.id !== subjectId));
-    const used = allEvents.filter((e) => e.subject.id === subjectId).length;
-    if (removed && used > 0) {
-      toast.info(
-        `Subject removed. ${used} event${used === 1 ? "" : "s"} keep "${removed.name}" until you pick another subject.`,
-      );
-    }
-    if (selectedSubjectId === subjectId) setSelectedSubjectId("all");
+  /** Moves every event of the given subjects to `to` (a subject, or no subject). */
+  const reassignEvents = (fromIds: string[], to: ISubject) => {
+    const from = new Set(fromIds);
+    const target: ISubject = { id: to.id, name: to.name, ...(to.custom ? { custom: true } : {}) };
+    setAllEvents((prev) =>
+      prev.map((e) => (from.has(e.subject.id) ? { ...e, subject: target } : e)),
+    );
   };
+
+  const renameSubject: ICalendarContext["renameSubject"] = (subjectId, rawName) => {
+    const name = cleanName(rawName);
+    if (!name) return { ok: false, error: "Name cannot be empty" };
+    const list = subjectsRef.current;
+    const subject = list.find((t) => t.id === subjectId);
+    if (!subject) return { ok: false, error: "Subject not found" };
+    const clash = list.find((t) => t.id !== subjectId && sameName(t.name, name));
+    if (clash) return { ok: false, error: `"${clash.name}" already exists. Use Merge to join them.` };
+    if (subject.name === name) return { ok: true };
+    saveSubjects(list.map((t) => (t.id === subjectId ? { ...t, name } : t)));
+    // events keep a copy of the subject: update their name too
+    setAllEvents((prev) =>
+      prev.map((e) => (e.subject.id === subjectId ? { ...e, subject: { ...e.subject, name } } : e)),
+    );
+    return { ok: true };
+  };
+
+  const deleteSubject: ICalendarContext["deleteSubject"] = (subjectId, moveToId) => {
+    const list = subjectsRef.current;
+    if (!list.some((t) => t.id === subjectId)) return;
+    const target = moveToId ? list.find((t) => t.id === moveToId && t.id !== subjectId) : undefined;
+    reassignEvents([subjectId], target ?? NO_SUBJECT);
+    saveSubjects(list.filter((t) => t.id !== subjectId));
+    if (selectedSubjectId === subjectId) setSelectedSubjectId(target ? target.id : "all");
+  };
+
+  const mergeSubjects: ICalendarContext["mergeSubjects"] = (sourceIds, targetId) => {
+    const list = subjectsRef.current;
+    const target = list.find((t) => t.id === targetId);
+    const sources = sourceIds.filter((id) => id !== targetId && list.some((t) => t.id === id));
+    if (!target || sources.length === 0) return 0;
+    const moved = allEventsRef.current.filter((e) => sources.includes(e.subject.id)).length;
+    reassignEvents(sources, target);
+    saveSubjects(list.filter((t) => !sources.includes(t.id)));
+    if (sources.includes(selectedSubjectId)) setSelectedSubjectId(target.id);
+    return moved;
+  };
+
+  /** Kept for the filter's quick × button: events become "No subject". */
+  const removeSubject = (subjectId: ISubject["id"]) => deleteSubject(subjectId);
 
   // Subject and colour filters work together.
   const filteredEvents = useMemo(
@@ -303,9 +393,13 @@ export function CalendarProvider({
     updateSettings({ badgeVariant: variant });
   };
 
+  // A view switch is a transition: React renders the new view without
+  // blocking input, and the tabs show the choice at once (see view-tabs.tsx).
   const setView = (newView: TCalendarView) => {
-    setCurrentViewState(newView);
-    updateSettings({ view: newView });
+    startTransition(() => {
+      setCurrentViewState(newView);
+      updateSettings({ view: newView });
+    });
   };
 
   const toggleTimeFormat = () => {
@@ -391,6 +485,10 @@ export function CalendarProvider({
     subjects,
     addSubject,
     removeSubject,
+    renameSubject,
+    deleteSubject,
+    mergeSubjects,
+    subjectEventCounts,
     selectedColors,
     filterEventsBySelectedColors,
     filterEventsBySelectedSubject,

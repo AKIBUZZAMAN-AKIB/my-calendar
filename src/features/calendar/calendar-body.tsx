@@ -1,8 +1,8 @@
 "use client";
 
 import { isSameDay, parseISO } from "date-fns";
-import { motion } from "framer-motion";
-import { fadeIn, transition } from "@/features/calendar/animations";
+import { useMemo } from "react";
+import type { IEvent } from "@/features/calendar/interfaces";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { AgendaEvents } from "@/features/calendar/views/agenda-view/agenda-events";
 import { CalendarMonthView } from "@/features/calendar/views/month-view/calendar-month-view";
@@ -13,70 +13,38 @@ import { CalendarYearView } from "@/features/calendar/views/year-view/calendar-y
 export function CalendarBody() {
   const { view, events } = useCalendar();
 
-  const singleDayEvents = events.filter((event) => {
-    const startDate = parseISO(event.startDate);
-    const endDate = parseISO(event.endDate);
-    return isSameDay(startDate, endDate);
-  });
-
-  const multiDayEvents = events.filter((event) => {
-    const startDate = parseISO(event.startDate);
-    const endDate = parseISO(event.endDate);
-    return !isSameDay(startDate, endDate);
-  });
+  // Split once per events change, not on every render of the body.
+  const { singleDayEvents, multiDayEvents } = useMemo(() => {
+    const single: IEvent[] = [];
+    const multi: IEvent[] = [];
+    for (const event of events) {
+      if (isSameDay(parseISO(event.startDate), parseISO(event.endDate))) single.push(event);
+      else multi.push(event);
+    }
+    return { singleDayEvents: single, multiDayEvents: multi };
+  }, [events]);
 
   return (
     <div
       data-calendar-body
-      className="relative h-full w-full overflow-x-hidden overflow-y-auto overscroll-contain"
+      className="relative h-full w-full overflow-x-hidden overflow-y-auto overscroll-contain transition-opacity duration-150 data-[pending=true]:opacity-60"
     >
-      <motion.div
-        key={view}
-        className="h-full"
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        variants={fadeIn}
-        transition={transition}
-      >
+      {/* keyed by view: a short CSS fade (GPU, no JS animation) when the view changes */}
+      <div key={view} data-view={view} className="h-full animate-view-in">
         {view === "month" && (
-          <CalendarMonthView
-            singleDayEvents={singleDayEvents}
-            multiDayEvents={multiDayEvents}
-          />
+          <CalendarMonthView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />
         )}
         {view === "week" && (
-          <CalendarWeekView
-            singleDayEvents={singleDayEvents}
-            multiDayEvents={multiDayEvents}
-          />
+          <CalendarWeekView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />
         )}
         {view === "day" && (
-          <CalendarDayView
-            singleDayEvents={singleDayEvents}
-            multiDayEvents={multiDayEvents}
-          />
+          <CalendarDayView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />
         )}
         {view === "year" && (
-          <CalendarYearView
-            singleDayEvents={singleDayEvents}
-            multiDayEvents={multiDayEvents}
-          />
+          <CalendarYearView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />
         )}
-        {view === "agenda" && (
-          <motion.div
-            key="agenda"
-            className="h-full"
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={fadeIn}
-            transition={transition}
-          >
-            <AgendaEvents />
-          </motion.div>
-        )}
-      </motion.div>
+        {view === "agenda" && <AgendaEvents />}
+      </div>
     </div>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { CheckIcon, Filter, RefreshCcw } from "lucide-react";
+import { CheckIcon, Filter, RefreshCcw, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { AdaptivePanel } from "@/features/calendar/header/adaptive-panel";
+import { openManageSubjects } from "@/features/calendar/subjects/manage-subjects";
 import { SubjectPicker } from "@/features/calendar/subjects/subject-picker";
+import { useState } from "react";
 import type { TEventColor } from "@/features/calendar/types";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +33,7 @@ const swatch: Record<TEventColor, string> = {
  * Popover on desktop, bottom sheet on phones.
  */
 export default function FilterEvents() {
+  const [open, setOpen] = useState(false);
   const {
     selectedSubjectId,
     filterEventsBySelectedSubject,
@@ -45,6 +48,8 @@ export default function FilterEvents() {
   return (
     <AdaptivePanel
       title="Filter events"
+      open={open}
+      onOpenChange={setOpen}
       trigger={
         <Button
           variant="outline"
@@ -64,14 +69,29 @@ export default function FilterEvents() {
     >
       <div className="flex flex-col gap-4">
         <section className="flex flex-col gap-1.5" data-filter-subjects>
-          <h3 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Subjects
-          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Subjects
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 px-2 text-xs"
+              data-subjects-manage
+              onClick={() => {
+                // close this panel first, then open the manager on its own
+                setOpen(false);
+                requestAnimationFrame(openManageSubjects);
+              }}
+            >
+              <Settings2 className="size-3.5" />
+              Edit / merge
+            </Button>
+          </div>
           <SubjectPicker
             value={selectedSubjectId}
             onChange={filterEventsBySelectedSubject}
             includeAll
-            allowRemove
           />
         </section>
 

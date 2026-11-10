@@ -1,5 +1,6 @@
 import React from "react";
 import { CalendarBody } from "@/features/calendar/calendar-body";
+import { ManageSubjectsDialog } from "@/features/calendar/subjects/manage-subjects";
 import { ClientOnly } from "@/features/calendar/client-only";
 import { CalendarProvider } from "@/features/calendar/contexts/calendar-context";
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
@@ -28,6 +29,7 @@ export async function Calendar() {
             <CalendarBody />
           </div>
         </div>
+          <ManageSubjectsDialog />
         </ClientOnly>
       </DndProvider>
     </CalendarProvider>

@@ -1,6 +1,6 @@
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
-import { differenceInMinutes, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
@@ -11,7 +11,7 @@ import { formatTime } from "@/features/calendar/helpers";
 import type { IEvent } from "@/features/calendar/interfaces";
 
 const calendarWeekEventCardVariants = cva(
-  "flex select-none flex-col gap-0.5 truncate whitespace-nowrap rounded-md border px-2 py-1.5 text-xs focus-visible:outline-offset-2",
+  "flex select-none flex-col items-stretch whitespace-nowrap rounded-md border text-xs focus-visible:outline-offset-2",
   {
     variants: {
       color: {
@@ -53,56 +53,94 @@ interface IProps
     HTMLAttributes<HTMLDivElement>,
     Omit<VariantProps<typeof calendarWeekEventCardVariants>, "color"> {
   event: IEvent;
+  /** Box height in px, from the day layout. */
+  heightPx: number;
+  /** Real length of the event on this day, in minutes. */
+  duration: number;
 }
 
-export function EventBlock({ event, className }: IProps) {
+const LINE_PX = 16; // text-xs leading-4
+const PAD_Y_PX = 8 + 2; // py-1 + border
+
+/**
+ * One event in the hour grid. The box always fills the slot the layout gave
+ * it (never wider), and the text adapts to the room inside:
+ * - short boxes: one line, title first, then the time if it still fits;
+ * - taller boxes: the title wraps over as many lines as fit and ends in "…",
+ *   with the time on its own line below.
+ * Long words without spaces break anywhere, so nothing pushes the box wider.
+ */
+export function EventBlock({ event, className, heightPx }: IProps) {
   const { badgeVariant, use24HourFormat } = useCalendar();
 
   const start = parseISO(event.startDate);
   const end = parseISO(event.endDate);
-  const durationInMinutes = differenceInMinutes(end, start);
-  const heightInPixels = (durationInMinutes / 60) * 96 - 8;
 
   const color = (
     badgeVariant === "dot" ? `${event.color}-dot` : event.color
   ) as VariantProps<typeof calendarWeekEventCardVariants>["color"];
 
-  const calendarWeekEventCardClasses = cn(
-    calendarWeekEventCardVariants({ color, className }),
-    durationInMinutes < 35 && "py-0 justify-center",
+  const compact = heightPx < PAD_Y_PX + LINE_PX * 2;
+  const titleLines = compact
+    ? 1
+    : Math.max(1, Math.floor((heightPx - PAD_Y_PX - LINE_PX) / LINE_PX));
+  const startText = formatTime(start, use24HourFormat);
+  const rangeText = `${startText} - ${formatTime(end, use24HourFormat)}`;
+
+  const dot = badgeVariant === "dot" && (
+    <svg
+      width="8"
+      height="8"
+      viewBox="0 0 8 8"
+      xmlns="http://www.w3.org/2000/svg"
+      className="mr-1 inline-block shrink-0 align-[0.5px]"
+      aria-hidden="true"
+    >
+      <circle cx="4" cy="4" r="4" />
+    </svg>
   );
 
   return (
-    <ResizableEvent event={event}>
-      <DraggableEvent event={event}>
+    <ResizableEvent event={event} className="h-full w-full">
+      <DraggableEvent event={event} className="h-full w-full">
         <EventDetailsDialog event={event}>
           <button
             type="button"
-            className={calendarWeekEventCardClasses}
-            style={{ height: `${heightInPixels}px` }}
+            data-event-block
+            data-compact={compact ? "" : undefined}
+            aria-label={`${event.title}, ${rangeText}`}
+            className={cn(
+              calendarWeekEventCardVariants({ color, className }),
+              "@container h-full w-full min-w-0 max-w-full overflow-hidden text-left",
+              compact ? "justify-center px-1.5 py-0" : "justify-start px-1.5 py-1",
+            )}
           >
-            <div className="flex items-center gap-1.5 truncate">
-              {badgeVariant === "dot" && (
-                <svg
-                  width="8"
-                  height="8"
-                  viewBox="0 0 8 8"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="shrink-0"
-                  aria-hidden="true"
-                >
-                  <circle cx="4" cy="4" r="4" />
-                </svg>
-              )}
-
-              <p className="truncate font-semibold">{event.title}</p>
-            </div>
-
-            {durationInMinutes > 25 && (
-              <p>
-                {formatTime(start, use24HourFormat)} -{" "}
-                {formatTime(end, use24HourFormat)}
+            {compact ? (
+              <p data-event-title className="w-full min-w-0 truncate leading-4">
+                {dot}
+                <span className="font-semibold">{event.title}</span>
+                <span className="hidden @[56px]:inline">, {startText}</span>
               </p>
+            ) : (
+              <>
+                <p
+                  data-event-title
+                  className="w-full min-w-0 shrink-0 overflow-hidden font-semibold leading-4 whitespace-normal [overflow-wrap:anywhere]"
+                  style={{
+                    display: "-webkit-box",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: titleLines,
+                    maxHeight: titleLines * LINE_PX,
+                  }}
+                >
+                  {dot}
+                  {event.title}
+                </p>
+                <p data-event-time className="hidden w-full min-w-0 shrink-0 truncate leading-4 @[40px]:block">
+                  <span className="@[92px]:hidden">{startText}</span>
+                  <span className="hidden @[92px]:inline">{rangeText}</span>
+                </p>
+              </>
             )}
           </button>
         </EventDetailsDialog>

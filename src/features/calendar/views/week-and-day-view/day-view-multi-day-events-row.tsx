@@ -47,8 +47,12 @@ export function DayViewMultiDayEventsRow({
 
   return (
     <div className="flex border-b">
-      <div className="w-11 shrink-0 sm:w-18"></div>
-      <div className="flex flex-1 flex-col gap-1 border-l py-1">
+      <div className="sticky left-0 z-20 w-11 shrink-0 border-r bg-background sm:w-18" />
+      {/* stays on screen while the grid scrolls sideways, so every bar shows both ends */}
+      <div
+        data-allday-row
+        className="sticky left-11 flex min-w-0 shrink-0 flex-col gap-1 py-1 w-[calc(var(--tg-vw,100%)-44px)] sm:left-18 sm:w-[calc(var(--tg-vw,100%)-72px)]"
+      >
         {multiDayEventsInDay.map((event) => {
           const eventStart = startOfDay(parseISO(event.startDate));
           const eventEnd = startOfDay(parseISO(event.endDate));

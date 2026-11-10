@@ -91,7 +91,10 @@ const zodEnglishOnly = {
 const result = await esbuild.build({
 	entryPoints: [r("single/main.tsx")],
 	bundle: true,
-	minify: true,
+	// KEEP_NAMES=1 keeps function names, for profiling builds only
+	minifyWhitespace: true,
+	minifySyntax: true,
+	minifyIdentifiers: !process.env.KEEP_NAMES,
 	format: "iife",
 	platform: "browser",
 	target: ["es2020", "safari15"],

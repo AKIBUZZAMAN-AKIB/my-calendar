@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import { CalendarBody } from "@/features/calendar/calendar-body";
+import { ManageSubjectsDialog } from "@/features/calendar/subjects/manage-subjects";
 import { CalendarProvider } from "@/features/calendar/contexts/calendar-context";
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
 import { CalendarHeader } from "@/features/calendar/header/calendar-header";
@@ -34,6 +35,7 @@ function App() {
 								<CalendarBody />
 							</div>
 						</div>
+						<ManageSubjectsDialog />
 					</DndProvider>
 				</CalendarProvider>
 			</main>

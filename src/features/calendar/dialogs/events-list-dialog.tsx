@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { CalendarDays, Plus } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, startTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Modal,
@@ -102,8 +102,10 @@ export function EventListDialog({
             variant="outline"
             className="h-11"
             onClick={() => {
-              setSelectedDate(date);
-              setView("day");
+              startTransition(() => {
+                setSelectedDate(date);
+                setView("day");
+              });
               setOpen(false);
             }}
           >

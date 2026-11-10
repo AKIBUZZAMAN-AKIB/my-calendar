@@ -12,6 +12,7 @@ import {
   useCalendar,
 } from "@/features/calendar/contexts/calendar-context";
 import { AdaptivePanel } from "@/features/calendar/header/adaptive-panel";
+import { openManageSubjects } from "@/features/calendar/subjects/manage-subjects";
 import { cn } from "@/lib/utils";
 
 function Row({
@@ -78,6 +79,7 @@ export function Settings() {
     sampleEventCount,
     removeSampleEvents,
   } = useCalendar();
+  const [open, setOpen] = useState(false);
   const [confirmSamples, setConfirmSamples] = useState(false);
   useEffect(() => {
     if (!confirmSamples) return;
@@ -95,6 +97,8 @@ export function Settings() {
   return (
     <AdaptivePanel
       title="Calendar settings"
+      open={open}
+      onOpenChange={setOpen}
       trigger={
         <Button
           variant="outline"
@@ -173,6 +177,20 @@ export function Settings() {
               { value: "color", label: "Color" },
             ]}
           />
+        </Row>
+        <Row label="Subjects" hint="Rename, delete or merge">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 shrink-0"
+            data-settings-manage-subjects
+            onClick={() => {
+              setOpen(false);
+              requestAnimationFrame(openManageSubjects);
+            }}
+          >
+            Manage
+          </Button>
         </Row>
         {sampleEventCount > 0 && (
           <Row

@@ -1,7 +1,6 @@
-import { getYear, isSameDay, isSameMonth } from "date-fns";
-import { motion } from "framer-motion";
+import { startTransition, useMemo } from "react";
+import { getYear, isSameMonth } from "date-fns";
 import { cn } from "@/lib/utils";
-import { staggerContainer, transition } from "@/features/calendar/animations";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { EventListDialog } from "@/features/calendar/dialogs/events-list-dialog";
 import { getCalendarCells } from "@/features/calendar/helpers";
@@ -29,19 +28,30 @@ const MONTHS = [
 ];
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const NO_EVENTS: IEvent[] = [];
+const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
 export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
   const { selectedDate, setSelectedDate, setView } = useCalendar();
   const currentYear = getYear(selectedDate);
-  const allEvents = [...multiDayEvents, ...singleDayEvents];
+  // One pass over the events: day -> events that start that day (was one
+  // filter over every event for each of the ~500 cells).
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, IEvent[]>();
+    for (const event of [...multiDayEvents, ...singleDayEvents]) {
+      const key = dayKey(new Date(event.startDate));
+      const list = map.get(key);
+      if (list) list.push(event);
+      else map.set(key, [event]);
+    }
+    return map;
+  }, [multiDayEvents, singleDayEvents]);
+  const todayKey = dayKey(new Date());
 
   return (
     <div className="flex flex-col p-2 pb-24 sm:p-6">
       {/* Year grid */}
-      <motion.div
-        initial="initial"
-        animate="animate"
-        variants={staggerContainer}
+      <div
         className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 auto-rows-fr"
       >
         {MONTHS.map((month, monthIndex) => {
@@ -49,12 +59,9 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
           const cells = getCalendarCells(monthDate);
 
           return (
-            <motion.div
+            <div
               key={month}
               className="flex flex-col border border-border rounded-lg shadow-sm overflow-hidden"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: monthIndex * 0.05, ...transition }}
               aria-label={`${month} ${currentYear} calendar`}
             >
               {/* Month header */}
@@ -62,8 +69,10 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
                 type="button"
                 className="w-full px-2 py-1.5 text-left sm:text-center text-primary sm:text-foreground font-semibold text-sm sm:py-2 sm:text-base cursor-pointer hover:bg-primary/20 transition-colors bg-transparent border-none appearance-none"
                 onClick={() => {
-                  setSelectedDate(new Date(currentYear, monthIndex, 1));
-                  setView("month");
+                  startTransition(() => {
+                    setSelectedDate(new Date(currentYear, monthIndex, 1));
+                    setView("month");
+                  });
                 }}
                 aria-label={`Select ${month}`}
               >
@@ -81,10 +90,9 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
               <div className="grid grid-cols-7 gap-px sm:gap-0.5 p-1 sm:p-1.5 flex-grow text-[11px] sm:text-xs">
                 {cells.map((cell) => {
                   const isCurrentMonth = isSameMonth(cell.date, monthDate);
-                  const isToday = isSameDay(cell.date, new Date());
-                  const dayEvents = allEvents.filter((event) =>
-                    isSameDay(new Date(event.startDate), cell.date),
-                  );
+                  const key = dayKey(cell.date);
+                  const isToday = key === todayKey;
+                  const dayEvents = eventsByDay.get(key) ?? NO_EVENTS;
                   const hasEvents = dayEvents.length > 0;
 
                   return (
@@ -136,10 +144,10 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
           );
         })}
-      </motion.div>
+      </div>
     </div>
   );
 }

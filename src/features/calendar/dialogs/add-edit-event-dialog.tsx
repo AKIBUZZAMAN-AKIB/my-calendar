@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addMinutes, set } from "date-fns";
-import { type ReactNode, useEffect, useMemo } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,26 +33,74 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { COLORS } from "@/features/calendar/constants";
-import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { useDisclosure } from "@/features/calendar/hooks";
+import { useCalendar, NO_SUBJECT } from "@/features/calendar/contexts/calendar-context";
 import type { IEvent } from "@/features/calendar/interfaces";
 import { eventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { SubjectPicker } from "@/features/calendar/subjects/subject-picker";
 
 interface IProps {
-  children: ReactNode;
+  /** Trigger. Leave out and pass open / onOpenChange for a controlled dialog. */
+  children?: ReactNode;
   startDate?: Date;
   startTime?: { hour: number; minute: number };
   event?: IEvent;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
+/**
+ * The dialog shell is cheap: the form (react-hook-form, zod, pickers, calendar
+ * context) lives in <EventForm>, which only mounts while the dialog is open.
+ * Views render many of these triggers, so keeping them light keeps view
+ * switches fast.
+ */
 export function AddEditEventDialog({
   children,
   startDate,
   startTime,
   event,
+  open,
+  onOpenChange,
 }: IProps) {
-  const { isOpen, onClose, onToggle } = useDisclosure();
+  const [innerOpen, setInnerOpen] = useState(false);
+  const isOpen = open ?? innerOpen;
+  const setOpen = (next: boolean) => {
+    if (open === undefined) setInnerOpen(next);
+    onOpenChange?.(next);
+  };
+
+  return (
+    // Modal, so the sheet owns touch scrolling. As a non-modal sheet opened from
+    // another sheet, the sheet underneath blocked every scroll inside it.
+    <Modal open={isOpen} onOpenChange={setOpen}>
+      {children && <ModalTrigger asChild>{children}</ModalTrigger>}
+      <ModalContent
+        data-event-form-sheet
+        className="flex max-h-[92dvh] flex-col gap-3 overflow-hidden lg:max-h-[90dvh] lg:max-w-lg"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <EventForm
+          startDate={startDate}
+          startTime={startTime}
+          event={event}
+          onDone={() => setOpen(false)}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function EventForm({
+  startDate,
+  startTime,
+  event,
+  onDone,
+}: {
+  startDate?: Date;
+  startTime?: { hour: number; minute: number };
+  event?: IEvent;
+  onDone: () => void;
+}) {
   const { addEvent, updateEvent, subjects, selectedSubjectId } = useCalendar();
   // New events start in the subject the filter shows, else the first subject.
   const defaultSubjectId =
@@ -112,18 +160,6 @@ export function AddEditEventDialog({
     },
   });
 
-  useEffect(() => {
-    form.reset({
-      title: event?.title ?? "",
-      description: event?.description ?? "",
-      startDate: initialDates.startDate,
-      endDate: initialDates.endDate,
-      color: event?.color ?? "blue",
-      subjectId: defaultSubjectId,
-    });
-    // defaultSubjectId is read on open only, so a new subject does not wipe the form
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [event, initialDates, form, isOpen]);
 
   const onSubmit = (values: TEventFormData) => {
     try {
@@ -149,8 +185,7 @@ export function AddEditEventDialog({
         toast.success("Event created successfully");
       }
 
-      onClose();
-      form.reset();
+      onDone();
     } catch (error) {
       console.error(`Error ${isEditing ? "editing" : "adding"} event:`, error);
       toast.error(`Failed to ${isEditing ? "edit" : "add"} event`);
@@ -158,15 +193,7 @@ export function AddEditEventDialog({
   };
 
   return (
-    // Modal, so the sheet owns touch scrolling. As a non-modal sheet opened from
-    // another sheet, the sheet underneath blocked every scroll inside it.
-    <Modal open={isOpen} onOpenChange={onToggle}>
-      <ModalTrigger asChild>{children}</ModalTrigger>
-      <ModalContent
-        data-event-form-sheet
-        className="flex max-h-[92dvh] flex-col gap-3 overflow-hidden lg:max-h-[90dvh] lg:max-w-lg"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
+    <>
         <ModalHeader className="shrink-0 pr-10 text-left">
           <ModalTitle>{isEditing ? "Edit Event" : "Add New Event"}</ModalTitle>
           <ModalDescription>
@@ -219,7 +246,9 @@ export function AddEditEventDialog({
                   />
                   {deletedSubject && field.value === deletedSubject.id && (
                     <p data-deleted-subject className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
-                      Current subject “{deletedSubject.name}” was deleted. It stays on this event unless you pick another.
+                      {deletedSubject.id === NO_SUBJECT.id
+                        ? "This event has no subject. Pick one, or save it as it is."
+                        : `Current subject “${deletedSubject.name}” was deleted. It stays on this event unless you pick another.`}
                     </p>
                   )}
                   <FormMessage />
@@ -302,7 +331,6 @@ export function AddEditEventDialog({
             {isEditing ? "Save Changes" : "Create Event"}
           </Button>
         </ModalFooter>
-      </ModalContent>
-    </Modal>
+    </>
   );
 }
