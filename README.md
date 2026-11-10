@@ -1,136 +1,112 @@
-# Full Calendar
+# My Calendar
 
-A feature-rich calendar application built with React, TypeScript, and ShadCN UI components. This project provides a customizable and interactive calendar experience with multiple views, event management, and a modern UI.
+A phone-friendly calendar app by **[AKIBUZZAMAN AKIB](https://github.com/AKIBUZZAMAN-AKIB)** (@AKIBUZZAMAN-AKIB). Five views, Subjects you can rename and merge, a floating time picker that sets any exact minute, and events saved on your device. It also ships as **one offline HTML file**.
 
-<img width="1790" height="977" alt="Screenshot 2025-08-05 at 15 00 40" src="https://github.com/user-attachments/assets/0f7bd8a4-59b2-4f4d-aaa9-b0655129e474" />
+<p align="center">
+  <img src="docs/recordings/gif/create-event.gif" alt="Creating an event on a phone" width="260">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/iphone/01-month.png" alt="Month view" width="260">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/iphone/05-day-busy.png" alt="Day view with overlapping events" width="260">
+</p>
 
-**Live Demo:** [https://calendar.jeraidi.dev](https://calendar.jeraidi.dev)
+<p align="center">
+  <a href="docs/video/promo-1920x1080.mp4"><b>Watch the promo video</b></a> (1920×1080) ·
+  <a href="docs/video/promo-vertical-1080x1920.mp4">vertical version</a> (1080×1920) ·
+  <a href="docs/GUIDE.md"><b>User guide</b></a> ·
+  <a href="release/calendar.html"><b>Download the single HTML file</b></a>
+</p>
 
-## Key Features
+[![Promo video](docs/video/promo-poster.jpg)](docs/video/promo-1920x1080.mp4)
 
-- **Multiple Views**: Day, Week, Month, Year, and Agenda views
-- **Event Management**: Create, edit, and delete events
-- **Drag & Drop**: Move events between time slots and dates
-- **Event Resizing**: Resize events in day and week views with smooth animations
-- **User Management**: Multi-user support with user filtering
-- **Color Coding**: Events can be color-coded for better organization
-- **Responsive Design**: Works seamlessly across all device sizes
-- **Dark Mode**: Full dark mode support
-- **24/12 Hour Format**: Toggle between 24-hour and 12-hour time formats
+## Features
 
-## Installation
+- **Five views:** Day, Week, Month, Year and Agenda. The tab switches the moment you tap it.
+- **Subjects:** every event has a Subject (Study, Work, Personal, Health, or your own). Filter by Subject, and **rename, delete or merge** Subjects; their events follow along. Deleting asks where the events go: another Subject or "No subject".
+- **Floating time picker:** a small panel next to the field, shared by Create and Edit. Tap an hour, a 5-minute step, then any single minute; −/+ change one minute at a time. 12-hour mode has AM/PM. Changing the start keeps the event's length. The date picker fits a 360px screen.
+- **Week and Day scroll sideways on phones:** each day is at least 84px wide; Day view widens when many events overlap. Day names and the hour column stay pinned.
+- **Complete event boxes:** overlapping events share columns like Google Calendar, and no box spills out of its column or the screen.
+- **More text in Month view:** two-line chips in five-row months, and multi-day bars that show their full title.
+- **Tap an empty slot** in Week or Day view to create an event at that time.
+- **Drag and drop:** with the mouse on desktop, or press and hold on a phone. Resize by dragging a box edge (mouse only).
+- **Saved on your device:** events, Subjects and settings live in `localStorage` and survive a reload. No account and no server.
+- **Settings:** dark mode, chip or dot event style, 12/24-hour time, the hour the day starts at, Agenda grouping, and removing the sample events.
+- **Single HTML build:** `npm run build:single` makes one ~870 KB file with the code, styles and Geist font inside. It works offline with no network requests.
 
-Use your preferred package manager to install the calendar component directly from the custom ShadCN UI registry:
+## Screenshots
+
+Real screenshots from Chromium. Every screen is available for Android (360×740), iPhone (390×844) and desktop (1440×900) in [`docs/screenshots`](docs/screenshots).
+
+| Week | Time picker | Manage Subjects | Dark mode |
+| --- | --- | --- | --- |
+| ![Week view](docs/screenshots/iphone/02-week.png) | ![Floating time picker](docs/screenshots/iphone/11-time-picker.png) | ![Manage Subjects](docs/screenshots/iphone/17-subjects-manage.png) | ![Month in dark mode](docs/screenshots/iphone/23-month-dark.png) |
+
+![Desktop](docs/screenshots/desktop/02-week.png)
+
+## Screen recordings
+
+Short MP4 recordings of real interactions, in [`docs/recordings`](docs/recordings):
+
+| Recording | What it shows |
+| --- | --- |
+| [create-event.mp4](docs/recordings/create-event.mp4) | Creating "Chemistry practical exam" with a Subject, colour and the time picker |
+| [edit-time.mp4](docs/recordings/edit-time.mp4) | Editing an event's time to 8:33 PM with the picker and the + button |
+| [switch-views.mp4](docs/recordings/switch-views.mp4) | Month → Week → Day → Year → Agenda → Month |
+| [week-day-scroll.mp4](docs/recordings/week-day-scroll.mp4) | Swiping Week and a busy Day sideways |
+| [manage-subjects.mp4](docs/recordings/manage-subjects.mp4) | Renaming, merging and deleting Subjects |
+| [persist-reload.mp4](docs/recordings/persist-reload.mp4) | Tapping an empty slot, saving, reloading: the event is still there |
+| [desktop-tour.mp4](docs/recordings/desktop-tour.mp4) | Drag and drop, Day view, dark mode and Agenda on desktop |
+
+<p>
+  <img src="docs/recordings/gif/week-day-scroll.gif" alt="Swiping Week and Day" width="230">
+  <img src="docs/recordings/gif/manage-subjects.gif" alt="Managing Subjects" width="230">
+  <img src="docs/recordings/gif/edit-time.gif" alt="Editing the time" width="230">
+</p>
+
+## Quick start
+
+### Use it offline
+
+Download [`release/calendar.html`](release/calendar.html) and open it in any modern browser. Events are saved in that browser. On a phone, if a file viewer does not keep your events, host the file on a static site such as GitHub Pages.
+
+### Run from source
 
 ```bash
-npx shadcn@latest add "https://calendar.jeraidi.dev/r/full-calendar.json"
+git clone https://github.com/AKIBUZZAMAN-AKIB/my-calendar.git
+cd my-calendar
+pnpm install
+pnpm dev
 ```
 
-## Usage
+Open `http://localhost:3000/calendar`.
 
-Import and use the `Calendar` component in your page:
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Development server |
+| `pnpm build` / `pnpm start` | Production build and server |
+| `npm run build:single` | Builds `dist/single.html`, the one-file offline calendar |
 
-```tsx
-import React, { Suspense } from "react";
-import { Calendar } from "@/features/calendar/calendar";
-import { CalendarSkeleton } from "@/features/calendar/skeletons/calendar-skeleton";
+The step-by-step [user guide](docs/GUIDE.md) covers every feature and explains how the single-file build works.
 
-export default function CalendarPage() {
-  return (
-    <Suspense fallback={<CalendarSkeleton />}>
-      <Calendar />
-    </Suspense>
-  );
-}
-```
+## Tech stack
 
-## Tech Stack
+Next.js, React, TypeScript, Tailwind CSS, shadcn/ui, date-fns, React Hook Form with Zod. The single-file build uses esbuild, the Tailwind CLI and html-minifier-terser ([`scripts/build-single.mjs`](scripts/build-single.mjs)).
 
-- **Framework**: Next.js 16 (Turbopack) & React 19
-- **Language**: TypeScript 5
-- **Styling**: Tailwind CSS 4
-- **Components**: ShadCN UI & Radix UI
-- **Animations**: Motion 12 (formerly framer-motion)
-- **State Management**: React Context + Hooks
-- **Validation**: Zod 4
-- **Date Handling**: date-fns & React Day Picker 9
-
-## Project Structure
-
-Here's an overview of the important files and directories in the project:
+## Project layout
 
 ```
-src/
-├── features/
-│   └── calendar/
-│       ├── calendar.tsx          # Main entry point component. Fetches data and wraps the app in providers.
-│       ├── contexts/
-│       │   ├── calendar-context.tsx  # Core state management (events, users, view state, filters).
-│       │   └── dnd-context.tsx       # Drag-and-drop context provider.
-│       ├── header/
-│       │   └── calendar-header.tsx   # Top navigation bar (view switcher, date nav, filters).
-│       ├── views/                    # Contains specific view components (Day, Week, Month, Year, Agenda).
-│       ├── calendar-body.tsx         # Renders the active view based on current state.
-│       ├── helpers.ts                # Core utility functions for date manipulation and calendar logic.
-│       ├── hooks.ts                  # Custom hooks for calendar logic.
-│       └── types.ts                  # TypeScript definitions for events, users, and views.
+src/features/calendar/   calendar views, dialogs, Subjects, drag and drop, settings
+src/components/ui/       shared UI, including the floating date-time picker
+single/                  entry point and HTML template for the single-file build
+scripts/build-single.mjs single-file build script
+release/calendar.html    ready-made single-file build
+docs/                    guide, screenshots, recordings and promo video
 ```
 
-## How It Works
+## Author
 
-The project is architected around a central context provider that manages the state of the calendar. Here is the high-level flow:
+**AKIBUZZAMAN AKIB** · [@AKIBUZZAMAN-AKIB](https://github.com/AKIBUZZAMAN-AKIB)
 
-1.  **Initialization**:
-    - The `Calendar` component (`src/components/calendar/calendar.tsx`) serves as the entry point.
-    - It fetches initial data (events and users) and initializes the `CalendarProvider`.
+## Credits and license
 
-2.  **State Management**:
-    - `CalendarContext` holds the application state, including the current view (Day, Week, Month, etc.), selected date, list of events, and active filters.
-    - It uses `localStorage` to persist user preferences such as the preferred view, time format (12h/24h), and badge styles.
-
-3.  **Rendering Logic**:
-    - The `CalendarHeader` allows users to navigate dates, switch views, and apply filters.
-    - The `CalendarBody` listens to the `view` state from the context and dynamically renders the appropriate view component (e.g., `MonthView`, `WeekView`).
-
-4.  **Interactions**:
-    - **Drag & Drop**: The `DndProvider` wraps the calendar to enable drag-and-drop functionality for events. When an event is moved, the context updates the event's start and end times.
-    - **Event Management**: Functions like `addEvent`, `updateEvent`, and `removeEvent` in the context handle CRUD operations, ensuring the UI stays in sync with the data.
-
-## Running Locally
-
-To run the project locally, follow these steps:
-
-1.  **Clone the repository**:
-
-    ```bash
-    git clone https://github.com/yassir-jeraidi/full-calendar.git
-    cd full-calendar
-    ```
-
-2.  **Install dependencies**:
-
-    ```bash
-    pnpm install
-    ```
-
-3.  **Start the development server**:
-
-    ```bash
-    pnpm dev
-    ```
-
-4.  **Open the application**:
-
-    Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is built on [Full Calendar](https://github.com/yassir-jeraidi/full-calendar) by Jeraidi Yassir, released under the MIT License. The original copyright notice is kept in [LICENSE](LICENSE). The documentation pages under `content/docs` describe the original component.

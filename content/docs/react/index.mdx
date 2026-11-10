@@ -1,65 +1,46 @@
 ---
 title: Introduction
-description: A feature-rich calendar application built with React, TypeScript, and ShadCN UI components. This project provides a customizable and interactive calendar experience with multiple views, event management, and a modern UI.
+description: My Calendar by AKIBUZZAMAN AKIB, a phone-friendly calendar built with React, TypeScript and shadcn/ui. Five views, Subjects, a floating time picker, events saved on the device, and a single offline HTML build.
 icon: Album
 ---
 
 ## Key Features
 
-- **Multiple Views**: Day, Week, Month, Year, and Agenda views
-- **Event Management**: Create, edit, and delete events
-- **Drag & Drop**: Move events between time slots and dates
-- **Event Resizing**: Resize events in day and week views with smooth animations
-- **User Management**: Multi-user support with user filtering
-- **Color Coding**: Events can be color-coded for better organization
-- **Responsive Design**: Works seamlessly across all device sizes
-- **Dark Mode**: Full dark mode support
-- **24/12 Hour Format**: Toggle between 24-hour and 12-hour time formats
+- **Five views**: Day, Week, Month, Year and Agenda, with an instant tab switch
+- **Event management**: create, view, edit and delete events with a title, description, Subject, colour, start and end
+- **Subjects**: Study, Work, Personal and Health to start with, plus your own; filter by Subject, and rename, delete or merge Subjects while their events follow along
+- **Floating time picker**: shared by Create and Edit; hour, 5-minute step and any single minute, −/+ one minute, AM/PM in 12-hour mode; changing the start keeps the event's length
+- **Phone-friendly time grid**: Week and Day scroll sideways on phones, with pinned day names and hour column; overlapping events share columns and every box stays complete
+- **Month view text**: two-line chips in five-row months and multi-day bars with their full title
+- **Tap an empty slot** in Week or Day view to create an event at that time
+- **Drag & drop**: mouse on desktop, press and hold on touch screens; resize by dragging a box edge with the mouse
+- **Saved on the device**: events, Subjects and settings are kept in `localStorage`
+- **Settings**: dark mode, chip or dot event style, 12/24-hour format, the hour the day starts at, Agenda grouping, removing sample events
+- **Single HTML build**: `npm run build:single` produces one offline file with the code, styles and font inside
 
 ---
 
 ## Core Concepts
 
-The calendar application is built around a few key principles that ensure a seamless, intuitive, and flexible user experience. These concepts define how the application organizes and presents data, handles user interactions, and supports customization.
+### Events
 
-### Event-Centric Design
+An event has a title, an optional description, a start and end, a colour and a Subject. Events can be moved by drag and drop, or edited in the form. In Week and Day view, overlapping events are laid out side by side in columns.
 
-Events are the heart of the calendar application, enabling users to create, manage, and visualize their schedules effectively. This concept focuses on:
+### Subjects
 
-- **Flexible Event Management**: Users can create, edit, and delete events with ease, with support for recurring events and detailed metadata (e.g., title, description, time, and attendees).
-- **Drag & Drop and Resizing**: Events can be moved across dates or time slots and resized in day/week views, providing an intuitive way to adjust schedules.
-- **Color Coding**: Events can be assigned distinct colors for quick identification, enhancing organization and visual clarity.
+Subjects group events, for example by school subject or by area of life. The Subject manager (Filter → **Edit / merge**, or Settings → **Subjects → Manage**) renames, deletes and merges them. Deleting asks whether to move the events to another Subject or keep them as "No subject". A backup of the previous Subject list is kept in `localStorage`.
 
-**Common Use Cases**:
-- Scheduling meetings or appointments
-- Planning personal or team tasks
-- Tracking deadlines or milestones
-- Organizing recurring events like weekly check-ins
+### Views
 
-### Multi-View Navigation
+- **Day** and **Week**: a time grid that scrolls up and down, and sideways on phones
+- **Month**: chips per day, multi-day bars, and **+N more** when a day is full
+- **Year**: twelve months at a glance; tap a month to open it
+- **Agenda**: a searchable list, grouped by date or by colour
 
-The calendar supports multiple views (Day, Week, Month, Year, Agenda) to cater to different user needs, ensuring flexibility in how schedules are visualized and managed. This concept includes:
+### Storage
 
-- **Dynamic View Switching**: Seamlessly switch between views to focus on specific timeframes or get a broader overview.
-- **Context-Aware Interactions**: Each view provides tailored interactions, such as resizing events in day/week views or summarizing events in the agenda view.
-- **Responsive Layouts**: Views adapt to different screen sizes, ensuring usability on desktops, tablets, and mobile devices.
+There is no server or account. Everything is saved in the browser's `localStorage` for the address the calendar was opened from, so the single file, a hosted copy and the Next.js app keep separate data.
 
-**Common Use Cases**:
-- Reviewing daily tasks in the Day view
-- Planning weekly schedules in the Week view
-- Getting a high-level overview in the Month or Year view
-- Summarizing upcoming events in the Agenda view
+---
 
-### Interactive and Customizable UI
-
-The application prioritizes a modern, user-friendly interface that enhances interactivity and personalization. Key aspects include:
-
-- **ShadCN UI Components**: Built with reusable, customizable components for a consistent and polished look.
-- **Dark Mode and Time Format Options**: Users can toggle between dark and light modes or choose between 24-hour and 12-hour time formats for a personalized experience.
-- **Multi-User Support**: Filter events by user to support collaborative environments, such as team scheduling or shared calendars.
-
-**Common Use Cases**:
-- Customizing the interface for personal or team preferences
-- Collaborating on shared calendars in multi-user environments
-- Ensuring accessibility across devices with responsive design
-- Enhancing usability with dark mode or preferred time formats
+Made by [AKIBUZZAMAN AKIB](https://github.com/AKIBUZZAMAN-AKIB). Based on [Full Calendar](https://github.com/yassir-jeraidi/full-calendar) by Jeraidi Yassir (MIT License). See the [user guide](https://github.com/AKIBUZZAMAN-AKIB/my-calendar/blob/main/docs/GUIDE.md) for step-by-step instructions with screenshots.

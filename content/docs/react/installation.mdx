@@ -1,38 +1,57 @@
 ---
 
 title: Installation
-description: How to install and set up the calendar application in your project using the custom ShadCN UI registry
+description: How to run My Calendar from source, build the single HTML file, or use the ready-made offline file
 icon: Rocket
 
 ---
 
-Use your preferred package manager to install the calendar component directly from the custom ShadCN UI registry:
+## Use the offline file
 
-```npm
-npx shadcn@latest add "https://calendar.jeraidi.tech/r/full-calendar.json"
+Download [`release/calendar.html`](https://github.com/AKIBUZZAMAN-AKIB/my-calendar/blob/main/release/calendar.html) and open it in any modern browser. It needs no server and makes no network requests.
+
+## Run from source
+
+```bash
+git clone https://github.com/AKIBUZZAMAN-AKIB/my-calendar.git
+cd my-calendar
+pnpm install
+pnpm dev
 ```
 
-## Example Usage
+> ✅ Visit the calendar at: `http://localhost:3000/calendar`
 
-Inside your `app/page.tsx`:
+The page is `src/app/calendar/page.tsx`:
 
 ```tsx
-import React, { Suspense } from "react";
-import { Calendar } from "@/components/calendar/calendar";
-import { CalendarSkeleton } from "@/components/calendar/skeletons/calendar-skeleton";
+import { Suspense } from "react";
+import { Calendar } from "@/features/calendar/calendar";
+import { CalendarSkeleton } from "@/features/calendar/skeletons/calendar-skeleton";
 
 export default function CalendarPage() {
   return (
-    <Suspense fallback={<CalendarSkeleton />}>
-      <Calendar />
-    </Suspense>
+    <main className="h-dvh w-full overflow-hidden">
+      <Suspense fallback={<CalendarSkeleton />}>
+        <Calendar />
+      </Suspense>
+    </main>
   );
 }
 ```
 
-> ✅ Visit your app at: `http://localhost:3000/`
+## Build the single HTML file
+
+```bash
+npm run build:single
+```
+
+This writes `dist/single.html`: Tailwind CSS, the Geist font and the bundled React app inlined into one minified file, with comments removed. See `scripts/build-single.mjs`.
+
+## About the original registry
+
+The original project can be added to another app from its shadcn registry with `npx shadcn@latest add "https://calendar.jeraidi.tech/r/full-calendar.json"`. That installs the upstream component, which does not include the changes in this repository (Subjects, the floating time picker, saved events and the phone layout).
 
 ## Next Steps
 
-- [Usage](/docs/calendar/usage)
-- [API References](/docs/calendar/api-references)
+- [User guide](https://github.com/AKIBUZZAMAN-AKIB/my-calendar/blob/main/docs/GUIDE.md)
+- [README](https://github.com/AKIBUZZAMAN-AKIB/my-calendar#readme)
