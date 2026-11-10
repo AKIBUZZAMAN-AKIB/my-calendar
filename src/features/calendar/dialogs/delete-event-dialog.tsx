@@ -46,8 +46,8 @@ export default function DeleteEventDialog({ eventId }: DeleteEventDialogProps) {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            event and remove event data from our servers.
+            This action cannot be undone. The event will be permanently
+            deleted from this device.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

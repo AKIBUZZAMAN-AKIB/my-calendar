@@ -119,7 +119,7 @@ export function MonthEventBadge({
               badgeVariant === "dot" && <EventBullet color={event.color} />}
 
             {renderBadgeText && (
-              <p className="flex-1 truncate font-semibold">
+              <p className="min-w-0 flex-1 truncate font-semibold" title={event.title}>
                 {eventCurrentDay && (
                   <span className="text-[10px] lg:text-xs">
                     Day {eventCurrentDay} of {eventTotalDays} •{" "}
@@ -130,7 +130,7 @@ export function MonthEventBadge({
             )}
           </div>
 
-          <div className="hidden lg:block">
+          <div className="hidden shrink-0 lg:block">
             {renderBadgeTime && (
               <span>
                 {formatTime(new Date(event.startDate), use24HourFormat)}
@@ -149,7 +149,7 @@ export function MonthEventBadge({
               badgeVariant === "dot" && <EventBullet color={event.color} />}
 
             {renderBadgeText && (
-              <p className="flex-1 truncate font-semibold">
+              <p className="min-w-0 flex-1 truncate font-semibold" title={event.title}>
                 {eventCurrentDay && (
                   <span className="text-[10px] lg:text-xs">
                     Day {eventCurrentDay} of {eventTotalDays} •{" "}
@@ -160,7 +160,7 @@ export function MonthEventBadge({
             )}
           </div>
 
-          <div className="hidden lg:block">
+          <div className="hidden shrink-0 lg:block">
             {renderBadgeTime && (
               <span>
                 {formatTime(new Date(event.startDate), use24HourFormat)}

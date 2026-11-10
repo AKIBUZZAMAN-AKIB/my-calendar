@@ -47,7 +47,14 @@ export function AdaptivePanel({
     return (
       <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-        <PopoverContent align={align} className={cn("w-72 p-3", className)}>
+        <PopoverContent
+          align={align}
+          collisionPadding={8}
+          className={cn(
+            "w-80 max-h-[min(80vh,var(--radix-popover-content-available-height))] overflow-y-auto overscroll-contain p-3",
+            className,
+          )}
+        >
           <p className="mb-2 px-1 text-sm font-semibold">{title}</p>
           {children}
         </PopoverContent>

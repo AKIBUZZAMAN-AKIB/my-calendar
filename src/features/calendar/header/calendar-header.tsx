@@ -7,7 +7,6 @@ import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-d
 import { DateNavigator } from "@/features/calendar/header/date-navigator";
 import FilterEvents from "@/features/calendar/header/filter";
 import { TodayButton } from "@/features/calendar/header/today-button";
-import { UserSelect } from "@/features/calendar/header/user-select";
 import { Settings } from "@/features/calendar/settings/settings";
 import Views from "./view-tabs";
 
@@ -16,7 +15,7 @@ import Views from "./view-tabs";
  *                    row 2  [▦ Month | ▤ ▥ ▧ ☰]  [filter] [⚙]
  *                    + floating "+" button for Add Event
  * Tablet (640–1023): same two rows, Add Event button in row 1
- * Desktop (≥ 1024):  one row with everything, user select included
+ * Desktop (≥ 1024):  one row with everything
  */
 export function CalendarHeader() {
   const { view, events } = useCalendar();
@@ -40,9 +39,6 @@ export function CalendarHeader() {
         <div className="flex min-w-0 items-center gap-1.5">
           <Views className="flex-1 lg:flex-none" />
           <FilterEvents />
-          <div className="hidden w-44 xl:block">
-            <UserSelect />
-          </div>
           <AddEditEventDialog>
             <Button className="hidden h-10 lg:inline-flex">
               <Plus className="size-4" />

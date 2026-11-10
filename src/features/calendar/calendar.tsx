@@ -1,23 +1,25 @@
 import React from "react";
 import { CalendarBody } from "@/features/calendar/calendar-body";
+import { ClientOnly } from "@/features/calendar/client-only";
 import { CalendarProvider } from "@/features/calendar/contexts/calendar-context";
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
 import { CalendarHeader } from "@/features/calendar/header/calendar-header";
-import { getEvents, getUsers } from "@/features/calendar/requests";
+import { getEvents, getSubjects } from "@/features/calendar/requests";
 
 async function getCalendarData() {
   return {
     events: await getEvents(),
-    users: await getUsers(),
+    subjects: await getSubjects(),
   };
 }
 
 export async function Calendar() {
-  const { events, users } = await getCalendarData();
+  const { events, subjects } = await getCalendarData();
 
   return (
-    <CalendarProvider events={events} users={users} view="month">
+    <CalendarProvider events={events} subjects={subjects} view="month">
       <DndProvider>
+        <ClientOnly>
         <div className="flex h-dvh w-full flex-col">
           <div className="shrink-0">
             <CalendarHeader />
@@ -26,6 +28,7 @@ export async function Calendar() {
             <CalendarBody />
           </div>
         </div>
+        </ClientOnly>
       </DndProvider>
     </CalendarProvider>
   );

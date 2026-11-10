@@ -1,27 +1,11 @@
 import { COLORS } from "@/features/calendar/constants";
-import type { IEvent, IUser } from "@/features/calendar/interfaces";
+import type { IEvent, ISubject } from "@/features/calendar/interfaces";
 
-export const USERS_MOCK: IUser[] = [
-	{
-		id: "f3b035ac-49f7-4e92-a715-35680bf63175",
-		name: "Michael Doe",
-		picturePath: null,
-	},
-	{
-		id: "3e36ea6e-78f3-40dd-ab8c-a6c737c3c422",
-		name: "Alice Johnson",
-		picturePath: null,
-	},
-	{
-		id: "a7aff6bd-a50a-4d6a-ab57-76f76bb27cf5",
-		name: "Robert Smith",
-		picturePath: null,
-	},
-	{
-		id: "dd503cf9-6c38-43cf-94cc-0d4032e2f77a",
-		name: "Emily Davis",
-		picturePath: null,
-	},
+export const SUBJECTS_MOCK: ISubject[] = [
+	{ id: "subject-study", name: "Study" },
+	{ id: "subject-work", name: "Work" },
+	{ id: "subject-personal", name: "Personal" },
+	{ id: "subject-health", name: "Health" },
 ];
 
 // ================================== //
@@ -119,7 +103,7 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 	const result: IEvent[] = [];
 	let currentId = 1;
 
-	const randomUser = USERS_MOCK[Math.floor(Math.random() * USERS_MOCK.length)];
+	const randomSubject = SUBJECTS_MOCK[Math.floor(Math.random() * SUBJECTS_MOCK.length)];
 
 	// Date range: 30 days before and after now
 	const now = new Date();
@@ -137,7 +121,7 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 		color: COLORS[Math.floor(Math.random() * COLORS.length)],
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-		user: randomUser,
+		subject: randomSubject,
 	};
 
 	result.push(currentEvent);
@@ -185,7 +169,7 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 			color: COLORS[Math.floor(Math.random() * COLORS.length)],
 			description:
 				"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-			user: USERS_MOCK[Math.floor(Math.random() * USERS_MOCK.length)],
+			subject: SUBJECTS_MOCK[Math.floor(Math.random() * SUBJECTS_MOCK.length)],
 		});
 	}
 

@@ -56,7 +56,7 @@ export function EventListDialog({
   return (
     <Modal open={open} onOpenChange={setOpen}>
       <ModalTrigger asChild>{children || defaultTrigger}</ModalTrigger>
-      <ModalContent className="flex flex-col gap-3 lg:max-w-md">
+      <ModalContent className="flex flex-col gap-3 overflow-x-hidden lg:max-w-md">
         <ModalHeader className="pr-10 text-left">
           <ModalTitle className="text-base">{format(date, "EEEE, MMMM d")}</ModalTitle>
           <ModalDescription id="responsive-modal-description">
@@ -73,14 +73,18 @@ export function EventListDialog({
                 <button
                   type="button"
                   data-list-event={event.id}
-                  className="flex min-h-12 w-full items-stretch gap-3 rounded-lg border p-2 text-left hover:bg-muted"
+                  className="flex min-h-12 w-full min-w-0 items-stretch gap-3 overflow-hidden rounded-lg border p-2 text-left hover:bg-muted"
                 >
                   <span className={cn("w-1 shrink-0 rounded-full", stripe[event.color])} />
                   <span className="flex min-w-0 flex-1 flex-col justify-center">
-                    <span className="truncate text-sm font-medium">{event.title}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {formatTime(event.startDate, use24HourFormat)} –{" "}
-                      {formatTime(event.endDate, use24HourFormat)} · {event.user.name}
+                    <span className="truncate text-sm font-medium" title={event.title}>{event.title}</span>
+                    <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                      <span className="shrink-0 tabular-nums">
+                        {formatTime(event.startDate, use24HourFormat)} –{" "}
+                        {formatTime(event.endDate, use24HourFormat)}
+                      </span>
+                      <span aria-hidden className="shrink-0">·</span>
+                      <span data-list-subject className="min-w-0 truncate" title={event.subject.name}>{event.subject.name}</span>
                     </span>
                   </span>
                 </button>

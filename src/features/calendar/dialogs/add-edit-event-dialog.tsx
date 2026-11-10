@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addMinutes, format, set } from "date-fns";
+import { addMinutes, set } from "date-fns";
 import { type ReactNode, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -37,6 +37,7 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/features/calendar/interfaces";
 import { eventSchema, type TEventFormData } from "@/features/calendar/schemas";
+import { SubjectPicker } from "@/features/calendar/subjects/subject-picker";
 
 interface IProps {
   children: ReactNode;
@@ -52,22 +53,43 @@ export function AddEditEventDialog({
   event,
 }: IProps) {
   const { isOpen, onClose, onToggle } = useDisclosure();
-  const { addEvent, updateEvent } = useCalendar();
+  const { addEvent, updateEvent, subjects, selectedSubjectId } = useCalendar();
+  // New events start in the subject the filter shows, else the first subject.
+  const defaultSubjectId =
+    event?.subject?.id ??
+    (selectedSubjectId !== "all" ? selectedSubjectId : subjects[0]?.id) ??
+    "";
   const isEditing = !!event;
+  // The event's subject was deleted: it keeps the name until another one is picked.
+  const deletedSubject =
+    event && !subjects.some((t) => t.id === event.subject.id) ? event.subject : null;
 
   const initialDates = useMemo(() => {
     if (!isEditing && !event) {
+      // "now", rounded up to the next 5 minutes so it matches the time picker
+      const now = new Date();
+      const rounded = set(now, {
+        minutes: Math.ceil((now.getMinutes() + 1) / 5) * 5,
+        seconds: 0,
+        milliseconds: 0,
+      });
       if (!startDate) {
-        const now = new Date();
-        return { startDate: now, endDate: addMinutes(now, 30) };
+        return { startDate: rounded, endDate: addMinutes(rounded, 30) };
       }
+      // a day picked without a time (month view) starts at the current time of day, not midnight
       const start = startTime
         ? set(new Date(startDate), {
             hours: startTime.hour,
             minutes: startTime.minute,
             seconds: 0,
+            milliseconds: 0,
           })
-        : new Date(startDate);
+        : set(new Date(startDate), {
+            hours: rounded.getHours(),
+            minutes: rounded.getMinutes(),
+            seconds: 0,
+            milliseconds: 0,
+          });
       const end = addMinutes(start, 30);
       return { startDate: start, endDate: end };
     }
@@ -86,6 +108,7 @@ export function AddEditEventDialog({
       startDate: initialDates.startDate,
       endDate: initialDates.endDate,
       color: event?.color ?? "blue",
+      subjectId: defaultSubjectId,
     },
   });
 
@@ -96,23 +119,25 @@ export function AddEditEventDialog({
       startDate: initialDates.startDate,
       endDate: initialDates.endDate,
       color: event?.color ?? "blue",
+      subjectId: defaultSubjectId,
     });
-  }, [event, initialDates, form]);
+    // defaultSubjectId is read on open only, so a new subject does not wipe the form
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event, initialDates, form, isOpen]);
 
   const onSubmit = (values: TEventFormData) => {
     try {
+      const subject =
+        subjects.find((t) => t.id === values.subjectId) ??
+        (isEditing ? event.subject : subjects[0]);
       const formattedEvent: IEvent = {
-        ...values,
-        startDate: format(values.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
-        endDate: format(values.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
-        id: isEditing ? event.id : Math.floor(Math.random() * 1000000),
-        user: isEditing
-          ? event.user
-          : {
-              id: Math.floor(Math.random() * 1000000).toString(),
-              name: "Jeraidi Yassir",
-              picturePath: null,
-            },
+        title: values.title.trim(),
+        description: values.description ?? "",
+        // saved as an exact instant; whole minutes, so nothing drifts by seconds
+        startDate: set(values.startDate, { seconds: 0, milliseconds: 0 }).toISOString(),
+        endDate: set(values.endDate, { seconds: 0, milliseconds: 0 }).toISOString(),
+        id: isEditing ? event.id : Date.now(),
+        subject: { id: subject.id, name: subject.name, custom: subject.custom },
         color: values.color,
       };
 
@@ -133,10 +158,16 @@ export function AddEditEventDialog({
   };
 
   return (
-    <Modal open={isOpen} onOpenChange={onToggle} modal={false}>
+    // Modal, so the sheet owns touch scrolling. As a non-modal sheet opened from
+    // another sheet, the sheet underneath blocked every scroll inside it.
+    <Modal open={isOpen} onOpenChange={onToggle}>
       <ModalTrigger asChild>{children}</ModalTrigger>
-      <ModalContent className="flex flex-col lg:max-w-lg">
-        <ModalHeader className="pr-10 text-left">
+      <ModalContent
+        data-event-form-sheet
+        className="flex max-h-[92dvh] flex-col gap-3 overflow-hidden lg:max-h-[90dvh] lg:max-w-lg"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <ModalHeader className="shrink-0 pr-10 text-left">
           <ModalTitle>{isEditing ? "Edit Event" : "Add New Event"}</ModalTitle>
           <ModalDescription>
             {isEditing
@@ -149,7 +180,8 @@ export function AddEditEventDialog({
           <form
             id="event-form"
             onSubmit={form.handleSubmit(onSubmit)}
-            className="-mx-1 grid min-h-0 flex-1 gap-4 overflow-y-auto px-1 py-2 lg:py-4"
+            noValidate
+            className="-mx-4 flex min-h-0 flex-1 touch-pan-y flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-2 sm:-mx-6 sm:px-6 lg:py-4 [-webkit-overflow-scrolling:touch]"
           >
             <FormField
               control={form.control}
@@ -163,10 +195,33 @@ export function AddEditEventDialog({
                     <Input
                       id="title"
                       placeholder="Enter a title"
+                      maxLength={300}
+                      autoComplete="off"
                       {...field}
                       className={fieldState.invalid ? "border-red-500" : ""}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="subjectId"
+              render={({ field, fieldState }) => (
+                <FormItem className="min-w-0" data-form-subjects>
+                  <FormLabel className="required">Subject</FormLabel>
+                  <SubjectPicker
+                    value={field.value}
+                    onChange={(id) => field.onChange(id === "all" ? "" : id)}
+                    selectOnCreate
+                    invalid={fieldState.invalid}
+                  />
+                  {deletedSubject && field.value === deletedSubject.id && (
+                    <p data-deleted-subject className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                      Current subject “{deletedSubject.name}” was deleted. It stays on this event unless you pick another.
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -190,7 +245,7 @@ export function AddEditEventDialog({
               name="color"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel className="required">Variant</FormLabel>
+                  <FormLabel className="required">Color</FormLabel>
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger
@@ -198,7 +253,7 @@ export function AddEditEventDialog({
                           fieldState.invalid ? "border-red-500" : ""
                         }`}
                       >
-                        <SelectValue placeholder="Select a variant" />
+                        <SelectValue placeholder="Select a color" />
                       </SelectTrigger>
                       <SelectContent>
                         {COLORS.map((color) => (
@@ -207,7 +262,7 @@ export function AddEditEventDialog({
                               <div
                                 className={`size-3.5 rounded-full bg-${color}-600 dark:bg-${color}-700`}
                               />
-                              {color}
+                              <span className="capitalize">{color}</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -223,12 +278,12 @@ export function AddEditEventDialog({
               name="description"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel className="required">Description</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Enter a description"
-                      className={fieldState.invalid ? "border-red-500" : ""}
+                      placeholder="Enter a description (optional)"
+                      className={`max-h-48 min-h-20 [overflow-wrap:anywhere] ${fieldState.invalid ? "border-red-500" : ""}`}
                     />
                   </FormControl>
                   <FormMessage />
@@ -237,7 +292,7 @@ export function AddEditEventDialog({
             />
           </form>
         </Form>
-        <ModalFooter className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+        <ModalFooter className="grid shrink-0 grid-cols-2 gap-2 border-t pt-3 sm:flex sm:justify-end sm:space-x-0">
           <ModalClose asChild>
             <Button type="button" variant="outline" className="h-11 sm:h-9">
               Cancel

@@ -1,11 +1,10 @@
 "use client";
 
 import { CheckIcon, Filter, RefreshCcw } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { AdaptivePanel } from "@/features/calendar/header/adaptive-panel";
-import { useMediaQuery } from "@/features/calendar/hooks";
+import { SubjectPicker } from "@/features/calendar/subjects/subject-picker";
 import type { TEventColor } from "@/features/calendar/types";
 import { cn } from "@/lib/utils";
 
@@ -28,24 +27,20 @@ const swatch: Record<TEventColor, string> = {
 };
 
 /**
- * One filter button for both "who" (user) and "which colours".
+ * One filter button for both subjects and colours.
  * Popover on desktop, bottom sheet on phones.
- * `showPeople` lets desktop keep its separate user select.
  */
 export default function FilterEvents() {
-  // On wide screens the header already shows a separate user select.
-  const showPeople = !useMediaQuery("(min-width: 1280px)");
   const {
-    users,
-    selectedUserId,
-    filterEventsBySelectedUser,
+    selectedSubjectId,
+    filterEventsBySelectedSubject,
     selectedColors,
     filterEventsBySelectedColors,
     clearFilter,
   } = useCalendar();
 
   const activeCount =
-    selectedColors.length + (selectedUserId && selectedUserId !== "all" ? 1 : 0);
+    selectedColors.length + (selectedSubjectId && selectedSubjectId !== "all" ? 1 : 0);
 
   return (
     <AdaptivePanel
@@ -68,48 +63,17 @@ export default function FilterEvents() {
       }
     >
       <div className="flex flex-col gap-4">
-        {showPeople && (
-          <section className="flex flex-col gap-1.5">
-            <h3 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              People
-            </h3>
-            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-              {[{ id: "all", name: "Everyone", picturePath: null }, ...users].map(
-                (user) => {
-                  const selected = (selectedUserId ?? "all") === user.id;
-                  return (
-                    <button
-                      key={user.id}
-                      type="button"
-                      data-filter-user={user.id}
-                      aria-pressed={selected}
-                      onClick={() => filterEventsBySelectedUser(user.id)}
-                      className={cn(
-                        "flex w-16 shrink-0 flex-col items-center gap-1 rounded-lg p-1.5 text-xs transition-colors",
-                        selected ? "bg-primary/10 text-primary" : "hover:bg-accent",
-                      )}
-                    >
-                      <Avatar
-                        className={cn(
-                          "size-10 ring-2 ring-offset-2 ring-offset-background",
-                          selected ? "ring-primary" : "ring-transparent",
-                        )}
-                      >
-                        <AvatarImage src={user.picturePath ?? undefined} alt={user.name} />
-                        <AvatarFallback className="text-xs">
-                          {user.id === "all" ? "All" : user.name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="w-full truncate text-center">
-                        {user.name.split(" ")[0]}
-                      </span>
-                    </button>
-                  );
-                },
-              )}
-            </div>
-          </section>
-        )}
+        <section className="flex flex-col gap-1.5" data-filter-subjects>
+          <h3 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Subjects
+          </h3>
+          <SubjectPicker
+            value={selectedSubjectId}
+            onChange={filterEventsBySelectedSubject}
+            includeAll
+            allowRemove
+          />
+        </section>
 
         <section className="flex flex-col gap-1.5">
           <h3 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">

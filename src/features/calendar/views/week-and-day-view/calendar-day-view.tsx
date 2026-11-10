@@ -1,5 +1,5 @@
 import { format, isWithinInterval, parseISO } from "date-fns";
-import { Calendar, Clock, User } from "lucide-react";
+import { Calendar, Clock, Tag } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { DayPicker } from "@/components/ui/day-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,7 +20,7 @@ interface IProps {
 }
 
 export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
-  const { selectedDate, setSelectedDate, users, use24HourFormat } =
+  const { selectedDate, setSelectedDate, use24HourFormat } =
     useCalendar();
   const scrollPosition = useScrollPosition();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -209,19 +209,19 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
             <ScrollArea className="h-[422px] px-4" type="auto">
               <div className="space-y-6 pb-4">
                 {currentEvents.map((event) => {
-                  const user = users.find((user) => user.id === event.user.id);
+                  const subject = event.subject;
 
                   return (
                     <div key={event.id} className="space-y-1.5">
-                      <p className="line-clamp-2 text-sm font-semibold">
+                      <p className="line-clamp-2 text-sm font-semibold [overflow-wrap:anywhere]" title={event.title}>
                         {event.title}
                       </p>
 
-                      {user && (
-                        <div className="flex items-center gap-1.5">
-                          <User className="size-4 text-t-quinary" />
-                          <span className="text-sm text-t-tertiary">
-                            {user.name}
+                      {subject && (
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <Tag className="size-4 shrink-0 text-t-quinary" />
+                          <span className="min-w-0 truncate text-sm text-t-tertiary" title={subject.name}>
+                            {subject.name}
                           </span>
                         </div>
                       )}

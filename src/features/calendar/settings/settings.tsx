@@ -2,7 +2,8 @@
 
 import { Minus, Plus, SettingsIcon } from "lucide-react";
 import { useTheme } from "next-themes";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -74,7 +75,15 @@ export function Settings() {
     setStartOfDayHour,
     agendaModeGroupBy,
     setAgendaModeGroupBy,
+    sampleEventCount,
+    removeSampleEvents,
   } = useCalendar();
+  const [confirmSamples, setConfirmSamples] = useState(false);
+  useEffect(() => {
+    if (!confirmSamples) return;
+    const t = setTimeout(() => setConfirmSamples(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmSamples]);
   const { resolvedTheme, setTheme } = useTheme();
   const isDarkMode = resolvedTheme === "dark";
 
@@ -165,6 +174,30 @@ export function Settings() {
             ]}
           />
         </Row>
+        {sampleEventCount > 0 && (
+          <Row
+            label="Sample events"
+            hint={`${sampleEventCount} starter events. Yours are kept.`}
+          >
+            <Button
+              variant={confirmSamples ? "destructive" : "outline"}
+              size="sm"
+              className="h-9 shrink-0"
+              data-remove-samples
+              onClick={() => {
+                if (!confirmSamples) {
+                  setConfirmSamples(true);
+                  return;
+                }
+                removeSampleEvents();
+                setConfirmSamples(false);
+                toast.success("Sample events removed");
+              }}
+            >
+              {confirmSamples ? "Tap again" : "Remove"}
+            </Button>
+          </Row>
+        )}
       </div>
     </AdaptivePanel>
   );

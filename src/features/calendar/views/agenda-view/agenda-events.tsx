@@ -1,7 +1,6 @@
 import { format, isToday, parseISO } from "date-fns";
 import { ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { type FC, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -18,6 +17,7 @@ import {
   getEventsForMonth,
   toCapitalize,
 } from "@/features/calendar/helpers";
+import { SubjectIcon } from "@/features/calendar/subjects/subject-icon";
 import { cn } from "@/lib/utils";
 
 const stripe: Record<string, string> = {
@@ -149,7 +149,7 @@ export const AgendaEvents: FC = () => {
               {groupEvents!.map((event) => (
                 <CommandItem
                   key={event.id}
-                  value={`${event.title} ${event.description} ${event.user.name} ${event.id}`}
+                  value={`${event.title} ${event.description} ${event.subject.name} ${event.id}`}
                   className={cn(
                     "mb-1.5 rounded-lg border p-0 data-[selected=true]:bg-accent/50",
                     isCollapsed && "hidden",
@@ -159,7 +159,7 @@ export const AgendaEvents: FC = () => {
                     <div
                       data-agenda-event={event.id}
                       className={cn(
-                        "flex min-h-14 w-full cursor-pointer items-stretch gap-3 rounded-lg p-2.5",
+                        "flex min-h-14 w-full min-w-0 cursor-pointer items-stretch gap-3 overflow-hidden rounded-lg p-2.5",
                         badgeVariant === "colored" && tint[event.color],
                       )}
                     >
@@ -178,17 +178,20 @@ export const AgendaEvents: FC = () => {
                       </div>
                       <span className={cn("w-1 shrink-0 rounded-full", stripe[event.color])} />
                       <div className="flex min-w-0 flex-1 flex-col justify-center">
-                        <p className="truncate text-sm font-medium">{event.title}</p>
-                        {event.description && (
-                          <p className="truncate text-xs text-muted-foreground">{event.description}</p>
-                        )}
+                        <p className="truncate text-sm font-medium" title={event.title}>{event.title}</p>
+                        <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                          <span data-agenda-subject className="max-w-[60%] shrink-0 truncate font-medium" title={event.subject.name}>
+                            {event.subject.name}
+                          </span>
+                          {event.description && (
+                            <>
+                              <span aria-hidden className="shrink-0">·</span>
+                              <span className="min-w-0 truncate">{event.description}</span>
+                            </>
+                          )}
+                        </p>
                       </div>
-                      <Avatar className="size-7 shrink-0 self-center">
-                        <AvatarImage src={event.user.picturePath ?? undefined} alt={event.user.name} />
-                        <AvatarFallback className="text-[10px]">
-                          {event.user.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <SubjectIcon subject={event.subject} className="size-7 self-center" />
                     </div>
                   </EventDetailsDialog>
                 </CommandItem>
