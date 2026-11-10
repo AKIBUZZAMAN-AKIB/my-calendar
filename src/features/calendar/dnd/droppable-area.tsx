@@ -1,4 +1,4 @@
-import React, { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useDragDrop } from "@/features/calendar/contexts/dnd-context";
 
 interface DroppableAreaProps {
@@ -24,9 +24,11 @@ export function DroppableArea({
       role="gridcell"
       aria-label="Droppable area"
       tabIndex={-1}
-      className={`${className || ""} ${isDragging ? "drop-target" : ""}`}
+      data-drop-date={date.toISOString()}
+      data-drop-hour={hour}
+      data-drop-minute={minute}
+      className={`${className || ""} transition-colors ${isDragging ? "drop-target" : ""}`}
       onDragOver={(e) => {
-        // Prevent default to allow drop
         e.preventDefault();
         e.currentTarget.classList.add("bg-primary/10");
       }}

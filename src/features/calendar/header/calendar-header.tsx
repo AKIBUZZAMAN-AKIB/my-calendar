@@ -1,23 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  CalendarRange,
-  Columns,
-  Grid2X2,
-  Grid3X3,
-  LayoutList,
-  List,
-  Plus,
-} from "lucide-react";
-
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import {
-  slideFromLeft,
-  slideFromRight,
-  transition,
-} from "@/features/calendar/animations";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
 import { DateNavigator } from "@/features/calendar/header/date-navigator";
@@ -27,46 +11,58 @@ import { UserSelect } from "@/features/calendar/header/user-select";
 import { Settings } from "@/features/calendar/settings/settings";
 import Views from "./view-tabs";
 
+/**
+ * Phone  (< 640px):  row 1  ‹ November 2026 ▾ ›            [today]
+ *                    row 2  [▦ Month | ▤ ▥ ▧ ☰]  [filter] [⚙]
+ *                    + floating "+" button for Add Event
+ * Tablet (640–1023): same two rows, Add Event button in row 1
+ * Desktop (≥ 1024):  one row with everything, user select included
+ */
 export function CalendarHeader() {
   const { view, events } = useCalendar();
 
   return (
-    <div className="flex flex-col gap-4 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
-      <motion.div
-        className="flex items-center gap-3"
-        variants={slideFromLeft}
-        initial="initial"
-        animate="animate"
-        transition={transition}
-      >
-        <TodayButton />
-        <DateNavigator view={view} events={events} />
-      </motion.div>
-
-      <motion.div
-        className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-1.5"
-        variants={slideFromRight}
-        initial="initial"
-        animate="animate"
-        transition={transition}
-      >
-        <div className="options flex-wrap flex items-center gap-4 md:gap-2">
-          <FilterEvents />
-          <Views />
-        </div>
-
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-1.5">
-          <UserSelect />
-
+    <>
+      <header className="flex flex-col gap-2 border-b px-2 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <TodayButton className="order-2 ml-auto lg:order-none lg:ml-0" />
+          <div className="order-1 min-w-0 lg:order-none">
+            <DateNavigator view={view} events={events} />
+          </div>
           <AddEditEventDialog>
-            <Button>
-              <Plus className="h-4 w-4" />
+            <Button className="order-3 hidden h-10 sm:inline-flex lg:hidden">
+              <Plus className="size-4" />
               Add Event
             </Button>
           </AddEditEventDialog>
         </div>
-        <Settings />
-      </motion.div>
-    </div>
+
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Views className="flex-1 lg:flex-none" />
+          <FilterEvents />
+          <div className="hidden w-44 xl:block">
+            <UserSelect />
+          </div>
+          <AddEditEventDialog>
+            <Button className="hidden h-10 lg:inline-flex">
+              <Plus className="size-4" />
+              Add Event
+            </Button>
+          </AddEditEventDialog>
+          <Settings />
+        </div>
+      </header>
+
+      <AddEditEventDialog>
+        <Button
+          size="icon"
+          aria-label="Add event"
+          data-fab="add"
+          className="fixed bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.75rem))] right-4 z-40 size-14 rounded-full shadow-lg shadow-primary/30 active:scale-95 sm:hidden"
+        >
+          <Plus className="size-6" />
+        </Button>
+      </AddEditEventDialog>
+    </>
   );
 }

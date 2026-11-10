@@ -93,7 +93,7 @@ export function WeekViewMultiDayEventsRow({
 
 	return (
 		<div className="overflow-hidden flex">
-			<div className="w-18 border-b"></div>
+			<div className="w-11 shrink-0 sm:w-18 border-b"></div>
 			<div className="grid flex-1 grid-cols-7 divide-x border-b border-l">
 				{weekDays.map((day, dayIndex) => (
 					<div

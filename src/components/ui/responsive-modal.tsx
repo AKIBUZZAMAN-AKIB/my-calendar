@@ -27,7 +27,8 @@ const ModalOverlay = (props: DialogPrimitive.DialogOverlayProps) => {
 
 const ModalVariants = cva(
 	cn(
-		"fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out",
+		"fixed z-50 gap-4 bg-background p-4 pt-6 sm:p-6 shadow-lg transition ease-in-out",
+		"pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6 overscroll-contain",
 		"data-[state=open]:animate-in data-[state=closed]:animate-out",
 		"data-[state=closed]:duration-300 data-[state=open]:duration-500 overflow-y-auto",
 		"lg:left-[50%] lg:top-[50%] lg:w-full lg:max-w-lg lg:translate-x-[-50%] lg:translate-y-[-50%]",
@@ -40,7 +41,7 @@ const ModalVariants = cva(
 			side: {
 				top: "inset-x-0 top-0 border-b rounded-b-xl max-h-[80dvh] lg:h-fit data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
 				bottom:
-					"inset-x-0 bottom-0 border-t lg:h-fit max-h-[80dvh] rounded-t-xl data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+					"inset-x-0 bottom-0 border-t lg:h-fit max-h-[92dvh] lg:max-h-[85dvh] rounded-t-2xl data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
 				left: "inset-y-0 left-0 h-full lg:h-fit w-3/4 border-r rounded-r-xl data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
 				right:
 					"inset-y-0 right-0 h-full lg:h-fit w-3/4 border-l rounded-l-xl data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
@@ -69,8 +70,14 @@ const ModalContent = ({
 				aria-describedby="responsive-modal-description"
 				className={cn(ModalVariants({ side }), className)}
 			>
+				{side === "bottom" && (
+					<div
+						aria-hidden
+						className="absolute left-1/2 top-2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-muted-foreground/30 lg:hidden"
+					/>
+				)}
 				{children}
-				<ModalClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+				<ModalClose className="absolute right-2 top-2 flex size-10 items-center justify-center lg:size-auto lg:right-4 lg:top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
 					<X className="h-4 w-4" />
 					<span className="sr-only">Close</span>
 				</ModalClose>

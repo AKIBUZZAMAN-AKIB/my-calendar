@@ -24,7 +24,7 @@ interface IProps {
 }
 
 export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
-    const {selectedDate, use24HourFormat} = useCalendar();
+    const {selectedDate, use24HourFormat, setSelectedDate, setView} = useCalendar();
     const scrollPosition = useScrollPosition();
 
     const weekStart = startOfWeek(selectedDate);
@@ -33,6 +33,7 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
 
     return (
         <motion.div
+            className="flex h-full flex-col"
             initial="initial"
             animate="animate"
             exit="exit"
@@ -40,17 +41,7 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
             transition={transition}
         >
             <motion.div
-                className="flex flex-col items-center justify-center border-b p-4 text-sm sm:hidden"
-                initial={{opacity: 0, y: -20}}
-                animate={{opacity: 1, y: 0}}
-                transition={transition}
-            >
-                <p>Weekly view is not recommended on smaller devices.</p>
-                <p>Please switch to a desktop device or use the daily view instead.</p>
-            </motion.div>
-
-            <motion.div
-                className="flex-col sm:flex"
+                className="flex min-h-0 flex-1 flex-col"
                 variants={staggerContainer}
             >
                 <div>
@@ -67,12 +58,15 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
                         transition={transition}
                     >
                         {/* Time column header - responsive width */}
-                        <div className="w-18"></div>
+                        <div className="w-11 shrink-0 sm:w-18"></div>
                         <div className="grid flex-1 grid-cols-7  border-l">
                             {weekDays.map((day, index) => (
                                 <motion.span
                                     key={day.toISOString()}
-                                    className="py-1 sm:py-2 text-center text-xs font-medium text-t-quaternary"
+                                    className={`py-1 sm:py-2 text-center text-xs font-medium text-t-quaternary ${isSameDay(day, new Date()) ? "text-primary" : ""}`}
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => { setSelectedDate(day); setView("day"); }}
                                     initial={{opacity: 0, y: -10}}
                                     animate={{opacity: 1, y: 0}}
                                     transition={{delay: index * 0.05, ...transition}}
@@ -80,7 +74,7 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
                                     {/* Mobile: Show only day abbreviation and number */}
                                     <span className="block sm:hidden">
 									{format(day, "EEE").charAt(0)}
-                                        <span className="block font-semibold text-t-secondary text-xs">
+                                        <span className={`mx-auto mt-0.5 flex size-6 items-center justify-center rounded-full font-semibold text-xs ${isSameDay(day, new Date()) ? "bg-primary text-primary-foreground" : "text-t-secondary"}`}>
 										{format(day, "d")}
 									</span>
 								</span>
@@ -98,10 +92,10 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
 
                 </div>
 
-                <ScrollArea className="h-[736px]" scrollPosition={scrollPosition} type="always">
+                <ScrollArea className="min-h-0 flex-1" scrollPosition={scrollPosition} type="auto">
                     <div className="flex">
                         {/* Hours column */}
-                        <motion.div className="relative w-18" variants={staggerContainer}>
+                        <motion.div className="relative w-11 shrink-0 sm:w-18" variants={staggerContainer}>
                             {hours.map((hour, index) => (
                                 <motion.div
                                     key={hour}
@@ -111,9 +105,9 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
                                     animate={{opacity: 1, x: 0}}
                                     transition={{delay: index * 0.02, ...transition}}
                                 >
-                                    <div className="absolute -top-3 right-2 flex h-6 items-center">
+                                    <div className="absolute -top-3 right-1 flex h-6 items-center sm:right-2">
                                         {index !== 0 && (
-                                            <span className="text-xs text-t-quaternary">
+                                            <span className="whitespace-nowrap text-[10px] text-t-quaternary sm:text-xs">
 												{format(
                                                     new Date().setHours(hour, 0, 0, 0),
                                                     use24HourFormat ? "HH:00" : "h a",

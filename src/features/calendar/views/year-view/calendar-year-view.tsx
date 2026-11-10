@@ -31,18 +31,18 @@ const MONTHS = [
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
-  const { selectedDate, setSelectedDate } = useCalendar();
+  const { selectedDate, setSelectedDate, setView } = useCalendar();
   const currentYear = getYear(selectedDate);
   const allEvents = [...multiDayEvents, ...singleDayEvents];
 
   return (
-    <div className="flex flex-col h-full  overflow-y-auto p-4  sm:p-6">
+    <div className="flex flex-col p-2 pb-24 sm:p-6">
       {/* Year grid */}
       <motion.div
         initial="initial"
         animate="animate"
         variants={staggerContainer}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 auto-rows-fr"
       >
         {MONTHS.map((month, monthIndex) => {
           const monthDate = new Date(currentYear, monthIndex, 1);
@@ -60,24 +60,25 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
               {/* Month header */}
               <button
                 type="button"
-                className="w-full px-3 py-2 text-center font-semibold text-sm sm:text-base cursor-pointer hover:bg-primary/20 transition-colors bg-transparent border-none appearance-none"
-                onClick={() =>
-                  setSelectedDate(new Date(currentYear, monthIndex, 1))
-                }
+                className="w-full px-2 py-1.5 text-left sm:text-center text-primary sm:text-foreground font-semibold text-sm sm:py-2 sm:text-base cursor-pointer hover:bg-primary/20 transition-colors bg-transparent border-none appearance-none"
+                onClick={() => {
+                  setSelectedDate(new Date(currentYear, monthIndex, 1));
+                  setView("month");
+                }}
                 aria-label={`Select ${month}`}
               >
                 {month}
               </button>
 
-              <div className="grid grid-cols-7 text-center text-xs font-medium text-muted-foreground py-2">
+              <div className="grid grid-cols-7 text-center text-[10px] sm:text-xs font-medium text-muted-foreground sm:py-2">
                 {WEEKDAYS.map((day) => (
-                  <div key={day} className="p-1">
+                  <div key={day} className="p-0.5 sm:p-1">
                     {day}
                   </div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-0.5 p-1.5 flex-grow text-xs">
+              <div className="grid grid-cols-7 gap-px sm:gap-0.5 p-1 sm:p-1.5 flex-grow text-[11px] sm:text-xs">
                 {cells.map((cell) => {
                   const isCurrentMonth = isSameMonth(cell.date, monthDate);
                   const isToday = isSameDay(cell.date, new Date());
@@ -90,7 +91,7 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
                     <div
                       key={cell.date.toISOString()}
                       className={cn(
-                        "flex flex-col items-center justify-start p-1 min-h-[2rem] relative",
+                        "flex flex-col items-center justify-start p-0 sm:p-1 min-h-[1.75rem] sm:min-h-[2rem] relative",
                         !isCurrentMonth && "text-muted-foreground/40",
                         hasEvents && isCurrentMonth
                           ? "cursor-pointer hover:bg-accent/20 hover:rounded-md"
@@ -102,7 +103,7 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
                           <div className="w-full h-full flex flex-col items-center justify-start gap-0.5">
                             <span
                               className={cn(
-                                "size-5 flex items-center justify-center font-medium",
+                                "size-[18px] sm:size-5 flex items-center justify-center font-medium",
                                 isToday &&
                                   "rounded-full bg-primary text-primary-foreground",
                               )}
@@ -110,27 +111,13 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
                               {cell.day}
                             </span>
                             <div className="flex justify-center items-center gap-0.5">
-                              {dayEvents.length <= 2 ? (
-                                dayEvents
-                                  .slice(0, 2)
-                                  .map((event) => (
-                                    <EventBullet
-                                      key={event.id}
-                                      color={event.color}
-                                      className="size-1.5"
-                                    />
-                                  ))
-                              ) : (
-                                <div className="flex flex-col justify-center items-center">
-                                  <EventBullet
-                                    color={dayEvents[0].color}
-                                    className="size-1.5"
-                                  />
-                                  <span className="text-[0.6rem]">
-                                    +{dayEvents.length - 1}
-                                  </span>
-                                </div>
-                              )}
+                              {dayEvents.slice(0, 3).map((event) => (
+                                <EventBullet
+                                  key={event.id}
+                                  color={event.color}
+                                  className="size-1 sm:size-1.5"
+                                />
+                              ))}
                             </div>
                           </div>
                         </EventListDialog>
@@ -138,7 +125,7 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
                         <div className="w-full h-full flex flex-col items-center justify-start">
                           <span
                             className={cn(
-                              "size-5 flex items-center justify-center font-medium",
+                              "size-[18px] sm:size-5 flex items-center justify-center font-medium",
                             )}
                           >
                             {cell.day}

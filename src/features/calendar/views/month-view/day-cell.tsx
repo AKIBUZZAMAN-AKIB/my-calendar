@@ -1,7 +1,7 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { isToday, startOfDay, isSunday, isSameMonth } from "date-fns";
+import { isToday, startOfDay, isSunday } from "date-fns";
 import { motion } from "framer-motion";
 import { useMemo, useCallback } from "react";
 
@@ -12,7 +12,6 @@ import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
 import { getMonthCellEvents } from "@/features/calendar/helpers";
 import { useMediaQuery } from "@/features/calendar/hooks";
 import type { ICalendarCell, IEvent } from "@/features/calendar/interfaces";
-import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import { MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -49,16 +48,13 @@ const MAX_VISIBLE_EVENTS = 3;
 
 export function DayCell({ cell, events, eventPositions }: IProps) {
   const { day, currentMonth, date } = cell;
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 1023px)");
 
   // Memoize cellEvents and currentCellMonth for performance
-  const { cellEvents, currentCellMonth } = useMemo(() => {
-    const cellEvents = getMonthCellEvents(date, events, eventPositions);
-    const currentCellMonth = startOfDay(
-      new Date(date.getFullYear(), date.getMonth(), 1),
-    );
-    return { cellEvents, currentCellMonth };
-  }, [date, events, eventPositions]);
+  const cellEvents = useMemo(
+    () => getMonthCellEvents(date, events, eventPositions),
+    [date, events, eventPositions],
+  );
 
   // Memoize event rendering for each position with animation
   const renderEventAtPosition = useCallback(
@@ -68,16 +64,12 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
         return (
           <motion.div
             key={`empty-${position}`}
-            className="lg:flex-1"
+            className="h-4 lg:h-auto lg:flex-1"
             initial={false}
             animate={false}
           />
         );
       }
-      const showBullet = isSameMonth(
-        new Date(event.startDate),
-        currentCellMonth,
-      );
 
       return (
         <motion.div
@@ -87,18 +79,11 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: position * 0.1, ...transition }}
         >
-          {showBullet && (
-            <EventBullet className="lg:hidden" color={event.color} />
-          )}
-          <MonthEventBadge
-            className="hidden lg:flex"
-            event={event}
-            cellDate={startOfDay(date)}
-          />
+          <MonthEventBadge event={event} cellDate={startOfDay(date)} compact={isMobile} />
         </motion.div>
       );
     },
-    [cellEvents, currentCellMonth, date],
+    [cellEvents, date, isMobile],
   );
 
   const showMoreCount = cellEvents.length - MAX_VISIBLE_EVENTS;
@@ -110,20 +95,24 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
     () => (
       <motion.div
         className={cn(
-          "flex h-full lg:min-h-40 flex-col gap-1 border-l border-t",
+          "flex h-full min-h-[80px] flex-col border-l border-t lg:min-h-40",
+          isMobile && currentMonth && "cursor-pointer active:bg-accent/60",
           isSunday(date) && "border-l-0",
         )}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={transition}
       >
-        <DroppableArea date={date} className="w-full h-full py-2">
+        <DroppableArea
+          date={date}
+          className="flex h-full w-full flex-col py-1 lg:py-2"
+        >
           <motion.span
             className={cn(
-              "h-6 px-1 text-xs font-semibold lg:px-2",
-              !currentMonth && "opacity-20",
+              "mx-auto flex h-5 items-center text-xs font-semibold lg:mx-0 lg:h-6 lg:px-2",
+              !currentMonth && "opacity-30",
               isToday(date) &&
-                "flex w-6 translate-x-1 items-center justify-center rounded-full bg-primary px-0 font-bold text-primary-foreground",
+                "w-5 justify-center rounded-full bg-primary px-0 font-bold text-primary-foreground lg:ml-1 lg:w-6 lg:px-0",
             )}
           >
             {day}
@@ -131,7 +120,7 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
 
           <motion.div
             className={cn(
-              "flex h-fit gap-1 px-2 mt-1 lg:h-[94px] lg:flex-col lg:gap-2 lg:px-0",
+              "mt-0.5 flex flex-col gap-0.5 lg:mt-1 lg:h-[94px] lg:gap-2",
               !currentMonth && "opacity-50",
             )}
           >
@@ -153,9 +142,9 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
           </motion.div>
 
           {showMobileMore && (
-            <div className="flex justify-end items-end mx-2">
-              <span className="text-[0.6rem] font-semibold text-accent-foreground">
-                +{showMoreCount}
+            <div className="mt-auto px-1">
+              <span className="block truncate text-[10px] font-semibold leading-tight text-muted-foreground">
+                +{showMoreCount} more
               </span>
             </div>
           )}

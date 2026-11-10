@@ -1,28 +1,68 @@
-import {
-  DotIcon,
-  MoonIcon,
-  PaletteIcon,
-  SettingsIcon,
-  SunMediumIcon,
-} from "lucide-react";
+"use client";
+
+import { Minus, Plus, SettingsIcon } from "lucide-react";
 import { useTheme } from "next-themes";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { MAX_SCROLL_HOUR, MIN_SCROLL_HOUR, useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { Input } from "@/components/ui/input";
-import { ChangeEvent } from "react";
+import {
+  MAX_SCROLL_HOUR,
+  MIN_SCROLL_HOUR,
+  useCalendar,
+} from "@/features/calendar/contexts/calendar-context";
+import { AdaptivePanel } from "@/features/calendar/header/adaptive-panel";
+import { cn } from "@/lib/utils";
+
+function Row({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-11 items-center justify-between gap-3 px-1">
+      <div className="flex flex-col">
+        <span className="text-sm">{label}</span>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex h-9 rounded-lg bg-muted p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          aria-pressed={value === o.value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            "rounded-md px-3 text-sm transition-colors",
+            value === o.value
+              ? "bg-background font-medium shadow-sm"
+              : "text-muted-foreground",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function Settings() {
   const {
@@ -35,148 +75,97 @@ export function Settings() {
     agendaModeGroupBy,
     setAgendaModeGroupBy,
   } = useCalendar();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDarkMode = resolvedTheme === "dark";
 
-  const isDarkMode = theme === "dark";
-  const isDotVariant = badgeVariant === "dot";
-
-  const onChangeStartOfDay = (e: ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10);
-    if (!isNaN(val) && val >= MIN_SCROLL_HOUR && val <= MAX_SCROLL_HOUR) {
-      setStartOfDayHour(val);
-    }
-  };
+  const hourLabel = (h: number) =>
+    use24HourFormat
+      ? `${String(h).padStart(2, "0")}:00`
+      : `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? "AM" : "PM"}`;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <SettingsIcon />
+    <AdaptivePanel
+      title="Calendar settings"
+      trigger={
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Calendar settings"
+          data-header-btn="settings"
+          className="size-10 shrink-0"
+        >
+          <SettingsIcon className="size-4" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>Calendar settings</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            Use dark mode
-            <DropdownMenuShortcut>
-              <Switch
-                icon={
-                  isDarkMode ? (
-                    <MoonIcon className="h-4 w-4" />
-                  ) : (
-                    <SunMediumIcon className="h-4 w-4" />
-                  )
-                }
-                checked={isDarkMode}
-                onCheckedChange={(checked) =>
-                  setTheme(checked ? "dark" : "light")
-                }
-              />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem>
-            Use dot badge
-            <DropdownMenuShortcut>
-              <Switch
-                icon={
-                  isDotVariant ? (
-                    <DotIcon className="w-4 h-4" />
-                  ) : (
-                    <PaletteIcon className="w-4 h-4" />
-                  )
-                }
-                checked={isDotVariant}
-                onCheckedChange={(checked) =>
-                  setBadgeVariant(checked ? "dot" : "colored")
-                }
-              />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Use 24 hour format
-            <DropdownMenuShortcut>
-              <Switch
-                icon={
-                  use24HourFormat ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width={24}
-                      height={24}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="icon icon-tabler icons-tabler-outline icon-tabler-clock-24"
-                    >
-                      <title>24 Hour Format</title>
-                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                      <path d="M3 12a9 9 0 0 0 5.998 8.485m12.002 -8.485a9 9 0 1 0 -18 0" />
-                      <path d="M12 7v5" />
-                      <path d="M12 15h2a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-1a1 1 0 0 0 -1 1v1a1 1 0 0 0 1 1h2" />
-                      <path d="M18 15v2a1 1 0 0 0 1 1h1" />
-                      <path d="M21 15v6" />
-                    </svg>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width={24}
-                      height={24}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="icon icon-tabler icons-tabler-outline icon-tabler-clock-12"
-                    >
-                      <title>12 Hour Format</title>
-                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                      <path d="M3 12a9 9 0 0 0 9 9m9 -9a9 9 0 1 0 -18 0" />
-                      <path d="M12 7v5l.5 .5" />
-                      <path d="M18 15h2a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-1a1 1 0 0 0 -1 1v1a1 1 0 0 0 1 1h2" />
-                      <path d="M15 21v-6" />
-                    </svg>
-                  )
-                }
-                checked={use24HourFormat}
-                onCheckedChange={toggleTimeFormat}
-              />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Days start at
-            <DropdownMenuShortcut>
-              <Input
-                type="number"
-                value={startOfDayHour}
-                max={MAX_SCROLL_HOUR}
-                min={MIN_SCROLL_HOUR}
-                onChange={onChangeStartOfDay}
-                className="w-16"
-              />
-            </DropdownMenuShortcut>
-            h
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Agenda view group by</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
+      }
+    >
+      <div className="flex flex-col divide-y">
+        <Row label="Dark mode">
+          <Switch
+            aria-label="Dark mode"
+            checked={isDarkMode}
+            onCheckedChange={(c) => setTheme(c ? "dark" : "light")}
+          />
+        </Row>
+        <Row label="Event style">
+          <Segmented
+            value={badgeVariant}
+            onChange={setBadgeVariant}
+            options={[
+              { value: "colored", label: "Color" },
+              { value: "dot", label: "Dot" },
+            ]}
+          />
+        </Row>
+        <Row label="Time format">
+          <Segmented
+            value={use24HourFormat ? "24" : "12"}
+            onChange={(v) => {
+              if ((v === "24") !== use24HourFormat) toggleTimeFormat();
+            }}
+            options={[
+              { value: "12", label: "12h" },
+              { value: "24", label: "24h" },
+            ]}
+          />
+        </Row>
+        <Row label="Day starts at" hint="Week & day view scroll here">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-9"
+              aria-label="Earlier"
+              disabled={startOfDayHour <= MIN_SCROLL_HOUR}
+              onClick={() => setStartOfDayHour(Math.max(MIN_SCROLL_HOUR, startOfDayHour - 1))}
+            >
+              <Minus className="size-4" />
+            </Button>
+            <span className="w-16 text-center text-sm tabular-nums" data-start-hour>
+              {hourLabel(startOfDayHour)}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-9"
+              aria-label="Later"
+              disabled={startOfDayHour >= MAX_SCROLL_HOUR}
+              onClick={() => setStartOfDayHour(Math.min(MAX_SCROLL_HOUR, startOfDayHour + 1))}
+            >
+              <Plus className="size-4" />
+            </Button>
+          </div>
+        </Row>
+        <Row label="Agenda groups by">
+          <Segmented
             value={agendaModeGroupBy}
-            onValueChange={(value) =>
-              setAgendaModeGroupBy(value as "date" | "color")
-            }
-          >
-            <DropdownMenuRadioItem value="date">Date</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="color">Color</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            onChange={setAgendaModeGroupBy}
+            options={[
+              { value: "date", label: "Date" },
+              { value: "color", label: "Color" },
+            ]}
+          />
+        </Row>
+      </div>
+    </AdaptivePanel>
   );
 }

@@ -11,6 +11,7 @@ import { groupEvents, HOUR_HEIGHT_PX, useScrollPosition } from "@/features/calen
 import type { IEvent } from "@/features/calendar/interfaces";
 import { CalendarTimeline } from "@/features/calendar/views/week-and-day-view/calendar-time-line";
 import { DayViewMultiDayEventsRow } from "@/features/calendar/views/week-and-day-view/day-view-multi-day-events-row";
+import { MobileWeekStrip } from "@/features/calendar/views/week-and-day-view/mobile-week-strip";
 import { RenderGroupedEvents } from "@/features/calendar/views/week-and-day-view/render-grouped-events";
 
 interface IProps {
@@ -80,18 +81,19 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
   const groupedEvents = groupEvents(dayEvents);
 
   return (
-    <div className="flex">
-      <div className="flex flex-1 flex-col">
+    <div className="flex h-full">
+      <div className="flex min-w-0 flex-1 flex-col">
         <div>
+          <MobileWeekStrip events={singleDayEvents} />
           <DayViewMultiDayEventsRow
             selectedDate={selectedDate}
             multiDayEvents={multiDayEvents}
           />
 
           {/* Day header */}
-          <div className="relative z-20 flex border-b">
-            <div className="w-18"></div>
-            <span className="flex-1 border-l py-2 text-center text-xs font-medium text-t-quaternary">
+          <div className="relative z-20 hidden border-b lg:flex">
+            <div className="w-11 shrink-0 sm:w-18"></div>
+            <span className="hidden flex-1 border-l py-2 lg:block text-center text-xs font-medium text-t-quaternary">
               {format(selectedDate, "EE")}{" "}
               <span className="font-semibold text-t-secondary">
                 {format(selectedDate, "d")}
@@ -99,15 +101,15 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
             </span>
           </div>
         </div>
-        <ScrollArea className="h-[800px]" type="always" ref={scrollAreaRef} scrollPosition={scrollPosition}>
+        <ScrollArea className="min-h-0 flex-1" type="auto" ref={scrollAreaRef} scrollPosition={scrollPosition}>
           <div className="flex">
             {/* Hours column */}
-            <div className="relative w-18">
+            <div className="relative w-11 shrink-0 sm:w-18">
               {hours.map((hour, index) => (
                 <div key={hour} className="relative" style={{ height: `${HOUR_HEIGHT_PX}px` }}>
-                  <div className="absolute -top-3 right-2 flex h-6 items-center">
+                  <div className="absolute -top-3 right-1 flex h-6 items-center sm:right-2">
                     {index !== 0 && (
-                      <span className="text-xs text-t-quaternary">
+                      <span className="whitespace-nowrap text-[10px] text-t-quaternary sm:text-xs">
                         {format(
                           new Date().setHours(hour, 0, 0, 0),
                           use24HourFormat ? "HH:00" : "h a",
@@ -176,7 +178,7 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
         </ScrollArea>
       </div>
 
-      <div className="hidden w-72 divide-y border-l md:block">
+      <div className="hidden w-72 flex-col divide-y border-l lg:flex">
         <DayPicker
           className="mx-auto w-fit"
           mode="single"
@@ -204,7 +206,7 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
           )}
 
           {currentEvents.length > 0 && (
-            <ScrollArea className="h-[422px] px-4" type="always">
+            <ScrollArea className="h-[422px] px-4" type="auto">
               <div className="space-y-6 pb-4">
                 {currentEvents.map((event) => {
                   const user = users.find((user) => user.id === event.user.id);

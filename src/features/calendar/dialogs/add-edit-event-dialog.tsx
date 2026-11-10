@@ -135,8 +135,8 @@ export function AddEditEventDialog({
   return (
     <Modal open={isOpen} onOpenChange={onToggle} modal={false}>
       <ModalTrigger asChild>{children}</ModalTrigger>
-      <ModalContent>
-        <ModalHeader>
+      <ModalContent className="flex flex-col lg:max-w-lg">
+        <ModalHeader className="pr-10 text-left">
           <ModalTitle>{isEditing ? "Edit Event" : "Add New Event"}</ModalTitle>
           <ModalDescription>
             {isEditing
@@ -149,7 +149,7 @@ export function AddEditEventDialog({
           <form
             id="event-form"
             onSubmit={form.handleSubmit(onSubmit)}
-            className="grid gap-4 py-4"
+            className="-mx-1 grid min-h-0 flex-1 gap-4 overflow-y-auto px-1 py-2 lg:py-4"
           >
             <FormField
               control={form.control}
@@ -237,13 +237,13 @@ export function AddEditEventDialog({
             />
           </form>
         </Form>
-        <ModalFooter className="flex justify-end gap-2">
+        <ModalFooter className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
           <ModalClose asChild>
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="h-11 sm:h-9">
               Cancel
             </Button>
           </ModalClose>
-          <Button form="event-form" type="submit">
+          <Button form="event-form" type="submit" className="h-11 sm:h-9">
             {isEditing ? "Save Changes" : "Create Event"}
           </Button>
         </ModalFooter>

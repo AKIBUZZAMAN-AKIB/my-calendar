@@ -176,3 +176,27 @@
 .drop-target.bg-primary\/10::after {
 	opacity: 1;
 }
+
+@utility touch-callout-none {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+@layer base {
+	html,
+	body {
+		overscroll-behavior-y: none;
+	}
+	body.touch-dragging,
+	body.touch-dragging * {
+		-webkit-user-select: none;
+		user-select: none;
+		cursor: grabbing;
+	}
+	button,
+	[role="button"],
+	[role="tab"] {
+		-webkit-tap-highlight-color: transparent;
+	}
+}

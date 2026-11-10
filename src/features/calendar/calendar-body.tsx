@@ -26,9 +26,13 @@ export function CalendarBody() {
   });
 
   return (
-    <div className="w-full h-full overflow-scroll relative">
+    <div
+      data-calendar-body
+      className="relative h-full w-full overflow-x-hidden overflow-y-auto overscroll-contain"
+    >
       <motion.div
         key={view}
+        className="h-full"
         initial="initial"
         animate="animate"
         exit="exit"
@@ -62,6 +66,7 @@ export function CalendarBody() {
         {view === "agenda" && (
           <motion.div
             key="agenda"
+            className="h-full"
             initial="initial"
             animate="animate"
             exit="exit"

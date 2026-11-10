@@ -39,12 +39,17 @@ export function CalendarMonthView({ singleDayEvents, multiDayEvents }: IProps) {
 	);
 
 	return (
-		<motion.div initial="initial" animate="animate" variants={staggerContainer}>
-			<div className="grid grid-cols-7">
+		<motion.div
+			className="flex min-h-full flex-col"
+			initial="initial"
+			animate="animate"
+			variants={staggerContainer}
+		>
+			<div className="sticky top-0 z-20 grid grid-cols-7 bg-background">
 				{WEEK_DAYS.map((day, index) => (
 					<motion.div
 						key={day}
-						className="flex items-center justify-center py-2"
+						className="flex items-center justify-center py-1.5 lg:py-2"
 						initial={{ opacity: 0, y: -10 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ delay: index * 0.05, ...transition }}
@@ -54,7 +59,7 @@ export function CalendarMonthView({ singleDayEvents, multiDayEvents }: IProps) {
 				))}
 			</div>
 
-			<div className="grid grid-cols-7 overflow-hidden">
+			<div className="grid flex-1 auto-rows-fr grid-cols-7 overflow-hidden">
 				{cells.map((cell) => (
 					<DayCell
 						key={cell.date.toISOString()}

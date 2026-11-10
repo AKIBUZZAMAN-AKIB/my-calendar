@@ -1,19 +1,21 @@
 import { format } from "date-fns";
-import type { ReactNode } from "react";
+import { CalendarDays, Plus } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Modal,
   ModalContent,
+  ModalDescription,
   ModalHeader,
   ModalTitle,
   ModalTrigger,
 } from "@/components/ui/responsive-modal";
-import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
+import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
 import { formatTime } from "@/features/calendar/helpers";
 import type { IEvent } from "@/features/calendar/interfaces";
-import { dayCellVariants } from "@/features/calendar/views/month-view/day-cell";
-import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
-import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
+import { cn } from "@/lib/utils";
 
 interface EventListDialogProps {
   date: Date;
@@ -22,68 +24,94 @@ interface EventListDialogProps {
   children?: ReactNode;
 }
 
+const stripe: Record<string, string> = {
+  blue: "bg-blue-600",
+  green: "bg-green-600",
+  red: "bg-red-600",
+  yellow: "bg-yellow-500",
+  purple: "bg-purple-600",
+  orange: "bg-orange-600",
+};
+
 export function EventListDialog({
   date,
   events,
   maxVisibleEvents = 3,
   children,
 }: EventListDialogProps) {
-  const cellEvents = events;
-  const hiddenEventsCount = Math.max(cellEvents.length - maxVisibleEvents, 0);
-  const { badgeVariant, use24HourFormat } = useCalendar();
+  const [open, setOpen] = useState(false);
+  const hiddenEventsCount = Math.max(events.length - maxVisibleEvents, 0);
+  const { use24HourFormat, setView, setSelectedDate } = useCalendar();
+
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+  );
 
   const defaultTrigger = (
-    <span className="cursor-pointer">
-      <span className="sm:hidden">+{hiddenEventsCount}</span>
-      <span className="hidden sm:inline py-0.5 px-2 my-1 rounded-xl border">
-        {hiddenEventsCount}
-        <span className="mx-1">more...</span>
-      </span>
-    </span>
+    <button type="button" className="cursor-pointer rounded-xl border px-2 py-0.5 hover:bg-accent">
+      +{hiddenEventsCount} more
+    </button>
   );
 
   return (
-    <Modal>
+    <Modal open={open} onOpenChange={setOpen}>
       <ModalTrigger asChild>{children || defaultTrigger}</ModalTrigger>
-      <ModalContent className="sm:max-w-[425px]">
-        <ModalHeader>
-          <ModalTitle className="my-2">
-            <div className="flex items-center gap-2">
-              <EventBullet color={cellEvents[0]?.color} className="" />
-              <p className="text-sm font-medium">
-                Events on {format(date, "EEEE, MMMM d, yyyy")}
-              </p>
-            </div>
-          </ModalTitle>
+      <ModalContent className="flex flex-col gap-3 lg:max-w-md">
+        <ModalHeader className="pr-10 text-left">
+          <ModalTitle className="text-base">{format(date, "EEEE, MMMM d")}</ModalTitle>
+          <ModalDescription id="responsive-modal-description">
+            {events.length === 0
+              ? "No events"
+              : `${events.length} ${events.length === 1 ? "event" : "events"}`}
+          </ModalDescription>
         </ModalHeader>
-        <div className="max-h-[60vh] overflow-y-auto space-y-2">
-          {cellEvents.length > 0 ? (
-            cellEvents.map((event) => (
+
+        <div className="-mx-1 flex max-h-[55dvh] flex-col gap-1.5 overflow-y-auto px-1">
+          {sorted.length > 0 ? (
+            sorted.map((event) => (
               <EventDetailsDialog event={event} key={event.id}>
-                <div
-                  className={cn(
-                    "flex items-center gap-2 p-2 border rounded-md hover:bg-muted cursor-pointer",
-                    {
-                      [dayCellVariants({ color: event.color })]:
-                        badgeVariant === "colored",
-                    },
-                  )}
+                <button
+                  type="button"
+                  data-list-event={event.id}
+                  className="flex min-h-12 w-full items-stretch gap-3 rounded-lg border p-2 text-left hover:bg-muted"
                 >
-                  <EventBullet color={event.color} />
-                  <div className="flex justify-between items-center w-full">
-                    <p className="text-sm font-medium">{event.title}</p>
-                    <p className="text-xs">
-                      {formatTime(event.startDate, use24HourFormat)}
-                    </p>
-                  </div>
-                </div>
+                  <span className={cn("w-1 shrink-0 rounded-full", stripe[event.color])} />
+                  <span className="flex min-w-0 flex-1 flex-col justify-center">
+                    <span className="truncate text-sm font-medium">{event.title}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {formatTime(event.startDate, use24HourFormat)} –{" "}
+                      {formatTime(event.endDate, use24HourFormat)} · {event.user.name}
+                    </span>
+                  </span>
+                </button>
               </EventDetailsDialog>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No events for this date.
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Nothing planned for this day.
             </p>
           )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            className="h-11"
+            onClick={() => {
+              setSelectedDate(date);
+              setView("day");
+              setOpen(false);
+            }}
+          >
+            <CalendarDays className="size-4" />
+            Open day
+          </Button>
+          <AddEditEventDialog startDate={date}>
+            <Button className="h-11">
+              <Plus className="size-4" />
+              Add event
+            </Button>
+          </AddEditEventDialog>
         </div>
       </ModalContent>
     </Modal>

@@ -10,7 +10,7 @@ import type { IEvent } from "@/features/calendar/interfaces";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 
 const eventBadgeVariants = cva(
-  "flex w-full h-6.5 select-none items-center justify-between gap-1.5 truncate whitespace-nowrap rounded-md border px-2 text-xs cursor-grab",
+  "flex w-full h-4 lg:h-6.5 select-none items-center justify-between gap-1 lg:gap-1.5 truncate whitespace-nowrap rounded-[4px] lg:rounded-md border px-1 lg:px-2 text-[10px] leading-none lg:text-xs cursor-grab",
   {
     variants: {
       color: {
@@ -58,6 +58,8 @@ interface IProps extends Omit<
   eventTotalDays?: number;
   className?: string;
   position?: "first" | "middle" | "last" | "none";
+  /** Phone mode: a tap falls through to the day cell (opens the day sheet); long-press drags. */
+  compact?: boolean;
 }
 
 export function MonthEventBadge({
@@ -67,6 +69,7 @@ export function MonthEventBadge({
   eventTotalDays,
   className,
   position: propPosition,
+  compact = false,
 }: IProps) {
   const { badgeVariant, use24HourFormat } = useCalendar();
 
@@ -103,16 +106,14 @@ export function MonthEventBadge({
   );
 
   const marginClass = {
-    first: "ml-1 mr-0",
+    first: "ml-0.5 mr-0 lg:ml-1",
     middle: "mx-0",
-    last: "ml-0 mr-1",
-    none: "mx-1",
+    last: "ml-0 mr-0.5 lg:mr-1",
+    none: "mx-0.5 lg:mx-1",
   }[position || "none"];
 
-  return (
-    <DraggableEvent event={event} className={marginClass}>
-      <EventDetailsDialog event={event}>
-        <button type="button" className={eventBadgeClasses}>
+  const badge = (
+<button type="button" className={eventBadgeClasses}>
           <div className="flex items-center gap-1.5 truncate">
             {!["middle", "last"].includes(position) &&
               badgeVariant === "dot" && <EventBullet color={event.color} />}
@@ -120,7 +121,7 @@ export function MonthEventBadge({
             {renderBadgeText && (
               <p className="flex-1 truncate font-semibold">
                 {eventCurrentDay && (
-                  <span className="text-xs">
+                  <span className="text-[10px] lg:text-xs">
                     Day {eventCurrentDay} of {eventTotalDays} •{" "}
                   </span>
                 )}
@@ -129,7 +130,7 @@ export function MonthEventBadge({
             )}
           </div>
 
-          <div className="hidden sm:block">
+          <div className="hidden lg:block">
             {renderBadgeTime && (
               <span>
                 {formatTime(new Date(event.startDate), use24HourFormat)}
@@ -137,7 +138,43 @@ export function MonthEventBadge({
             )}
           </div>
         </button>
-      </EventDetailsDialog>
+  );
+
+  if (compact) {
+    return (
+      <DraggableEvent event={event} className={marginClass} passClick>
+<div className={eventBadgeClasses}>
+          <div className="flex items-center gap-1.5 truncate">
+            {!["middle", "last"].includes(position) &&
+              badgeVariant === "dot" && <EventBullet color={event.color} />}
+
+            {renderBadgeText && (
+              <p className="flex-1 truncate font-semibold">
+                {eventCurrentDay && (
+                  <span className="text-[10px] lg:text-xs">
+                    Day {eventCurrentDay} of {eventTotalDays} •{" "}
+                  </span>
+                )}
+                {event.title}
+              </p>
+            )}
+          </div>
+
+          <div className="hidden lg:block">
+            {renderBadgeTime && (
+              <span>
+                {formatTime(new Date(event.startDate), use24HourFormat)}
+              </span>
+            )}
+          </div>
+        </div>
+      </DraggableEvent>
+    );
+  }
+
+  return (
+    <DraggableEvent event={event} className={marginClass}>
+      <EventDetailsDialog event={event}>{badge}</EventDetailsDialog>
     </DraggableEvent>
   );
 }

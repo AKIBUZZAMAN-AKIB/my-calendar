@@ -18,7 +18,12 @@ interface DragDropContextType {
   isDragging: boolean;
   startDrag: (event: IEvent) => void;
   endDrag: () => void;
-  handleEventDrop: (date: Date, hour?: number, minute?: number) => void;
+  handleEventDrop: (
+    date: Date,
+    hour?: number,
+    minute?: number,
+    eventOverride?: IEvent,
+  ) => void;
 }
 
 interface DndProviderProps {
@@ -79,8 +84,13 @@ export function DndProvider({ children }: DndProviderProps) {
   }, []);
 
   const handleEventDrop = useCallback(
-    (targetDate: Date, hour?: number, minute?: number) => {
-      const { draggedEvent } = dragState;
+    (
+      targetDate: Date,
+      hour?: number,
+      minute?: number,
+      eventOverride?: IEvent,
+    ) => {
+      const draggedEvent = eventOverride ?? dragState.draggedEvent;
       if (!draggedEvent) return;
 
       const { newStart, newEnd } = calculateNewDates(

@@ -1,107 +1,74 @@
-import { motion, AnimatePresence } from "motion/react";
+"use client";
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import { cn } from "@/lib/utils";
-import { useCalendar } from "../contexts/calendar-context";
 import {
   CalendarRange,
-  List,
-  Columns,
-  Grid3X3,
+  Columns3,
   Grid2X2,
+  Grid3X3,
+  List,
 } from "lucide-react";
-import { TCalendarView } from "../types";
 import { memo } from "react";
+import { cn } from "@/lib/utils";
+import { useCalendar } from "../contexts/calendar-context";
+import type { TCalendarView } from "../types";
 
-const tabs = [
-  {
-    name: "Agenda",
-    value: "agenda",
-    icon: () => <CalendarRange className="h-4 w-4" />,
-  },
-  {
-    name: "Day",
-    value: "day",
-    icon: () => <List className="h-4 w-4" />,
-  },
-  {
-    name: "Week",
-    value: "week",
-    icon: () => <Columns className="h-4 w-4" />,
-  },
-  {
-    name: "Month",
-    value: "month",
-    icon: () => <Grid3X3 className="h-4 w-4" />,
-  },
-  {
-    name: "Year",
-    value: "year",
-    icon: () => <Grid2X2 className="h-4 w-4" />,
-  },
+const tabs: { name: string; value: TCalendarView; Icon: typeof List }[] = [
+  { name: "Day", value: "day", Icon: List },
+  { name: "Week", value: "week", Icon: Columns3 },
+  { name: "Month", value: "month", Icon: Grid3X3 },
+  { name: "Year", value: "year", Icon: Grid2X2 },
+  { name: "Agenda", value: "agenda", Icon: CalendarRange },
 ];
 
-function Views() {
+/**
+ * Segmented control. On phones the active view shows icon + label and the
+ * others show just an icon, so all five fit in one line next to the filter
+ * and settings buttons.
+ */
+function Views({ className }: { className?: string }) {
   const { view, setView } = useCalendar();
 
   return (
-    <Tabs
-      value={view}
-      onValueChange={(value) => setView(value as TCalendarView)}
-      className="gap-4 sm:w-auto w-full"
+    <div
+      role="tablist"
+      aria-label="Calendar view"
+      className={cn(
+        "flex h-10 min-w-0 items-center gap-0.5 rounded-lg bg-muted p-1",
+        className,
+      )}
     >
-      <TabsList className="h-auto gap-2 rounded-xl p-1 w-full">
-        {tabs.map(({ icon: Icon, name, value }) => {
-          const isActive = view === value;
-
-          return (
-            <motion.div
-              key={value}
-              layout
+      {tabs.map(({ Icon, name, value }) => {
+        const isActive = view === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            aria-label={name}
+            title={name}
+            data-view-btn={value}
+            onClick={() => setView(value)}
+            className={cn(
+              "flex h-8 min-w-9 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              isActive
+                ? "flex-[1_0_auto] bg-background text-foreground shadow-sm lg:flex-none lg:px-3"
+                : "flex-1 text-muted-foreground hover:text-foreground lg:flex-none",
+            )}
+          >
+            <Icon className="size-4 shrink-0" />
+            <span
               className={cn(
-                "flex h-8 items-center justify-center overflow-hidden rounded-md",
-                isActive ? "flex-1" : "flex-none"
+                "whitespace-nowrap",
+                isActive ? "inline" : "hidden sm:inline",
               )}
-              onClick={() => setView(value as TCalendarView)}
-              initial={false}
-              animate={{
-                width: isActive ? 120 : 32,
-              }}
-              transition={{
-                type: "tween",
-                stiffness: 400,
-                damping: 25,
-              }}
             >
-              <TabsTrigger value={value} asChild>
-                <motion.div
-                  className="flex h-8 w-full items-center justify-center cursor-pointer"
-                  animate={{ filter: "blur(0px)" }}
-                  exit={{ filter: "blur(2px)" }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                >
-                  <Icon />
-                  <AnimatePresence initial={false}>
-                    {isActive && (
-                      <motion.span
-                        className="font-medium"
-                        initial={{ opacity: 0, scaleX: 0.8 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.25, ease: "easeOut" }}
-                        style={{ originX: 0 }}
-                      >
-                        {name}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </TabsTrigger>
-            </motion.div>
-          );
-        })}
-      </TabsList>
-    </Tabs>
+              {name}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
