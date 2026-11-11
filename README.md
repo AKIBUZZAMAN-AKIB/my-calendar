@@ -3,15 +3,15 @@
 A phone-friendly calendar app by **[AKIBUZZAMAN AKIB](https://github.com/AKIBUZZAMAN-AKIB)** (@AKIBUZZAMAN-AKIB). Five views, Subjects you can rename, delete and merge, a floating time picker that sets any exact minute, complete event boxes like Google Calendar, and events saved on your device. It also ships as **one offline HTML file**.
 
 <p align="center">
-  <a href="https://akibuzzaman-akib.github.io/my-calendar/release/calendar.html"><b>Open the live app</b></a> ·
-  <a href="https://akibuzzaman-akib.github.io/my-calendar/docs/"><b>Watch the demo videos</b></a> ·
+  <a href="https://akibuzzaman-akib.github.io/my-calendar/"><b>Open the live app</b></a> ·
+  <a href="#demo-videos"><b>Demo videos</b></a> ·
   <a href="docs/GUIDE.md"><b>User guide</b></a> ·
   <a href="release/calendar.html"><b>Download the single HTML file</b></a>
 </p>
 
 ## Demo videos
 
-Two slow, smooth **60fps** walkthroughs of every feature, recorded from the real app (no voice, no music). Tap a preview to play the full video in your browser.
+Two slow, smooth **60fps** walkthroughs of every feature, recorded from the real app (no voice, no music). Tap a preview to open the MP4 file on GitHub, then use **View raw** or the download button to watch it.
 
 <table>
   <tr>
@@ -20,27 +20,23 @@ Two slow, smooth **60fps** walkthroughs of every feature, recorded from the real
   </tr>
   <tr>
     <td align="center" valign="top">
-      <a href="https://akibuzzaman-akib.github.io/my-calendar/docs/video/demo-desktop-1920x1080-60fps.mp4"><img src="docs/video/demo-desktop-poster.jpg" alt="Play the desktop demo video" width="520"></a>
+      <a href="docs/video/demo-desktop-1920x1080-60fps.mp4"><img src="docs/video/demo-desktop-poster.jpg" alt="Play the desktop demo video" width="520"></a>
       <br><br>
-      <a href="https://akibuzzaman-akib.github.io/my-calendar/docs/video/demo-desktop-1920x1080-60fps.mp4"><img src="docs/video/preview/demo-desktop-highlights.gif" alt="Desktop highlights: Month view, creating an event, drag and drop, dark mode" width="520"></a>
+      <a href="docs/video/demo-desktop-1920x1080-60fps.mp4"><img src="docs/video/preview/demo-desktop-highlights.gif" alt="Desktop highlights: Month view, creating an event, drag and drop, dark mode" width="520"></a>
     </td>
     <td align="center" valign="top">
-      <a href="https://akibuzzaman-akib.github.io/my-calendar/docs/video/demo-phone-1080x1920-60fps.mp4"><img src="docs/video/preview/demo-phone-highlights.gif" alt="Phone highlights: Month view, swiping Week, moving an event, creating an event" width="250"></a>
+      <a href="docs/video/demo-phone-1080x1920-60fps.mp4"><img src="docs/video/preview/demo-phone-highlights.gif" alt="Phone highlights: Month view, swiping Week, moving an event, creating an event" width="250"></a>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <a href="https://akibuzzaman-akib.github.io/my-calendar/docs/video/demo-desktop-1920x1080-60fps.mp4"><b>▶ Play desktop demo</b></a> ·
-      <a href="docs/video/demo-desktop-1920x1080-60fps.mp4">MP4 file (22.8 MB)</a>
+      <a href="docs/video/demo-desktop-1920x1080-60fps.mp4"><b>▶ Desktop demo</b></a> · MP4, 22.8 MB
     </td>
     <td align="center">
-      <a href="https://akibuzzaman-akib.github.io/my-calendar/docs/video/demo-phone-1080x1920-60fps.mp4"><b>▶ Play phone demo</b></a> ·
-      <a href="docs/video/demo-phone-1080x1920-60fps.mp4">MP4 file (13.7 MB)</a>
+      <a href="docs/video/demo-phone-1080x1920-60fps.mp4"><b>▶ Phone demo</b></a> · MP4, 13.7 MB
     </td>
   </tr>
 </table>
-
-The [watch page](https://akibuzzaman-akib.github.io/my-calendar/docs/) has both videos with chapter buttons that jump to each feature.
 
 **Desktop demo chapters:** Month view (0:04) · switching views (0:34) · Week view (0:48) · creating an event with the floating time picker (1:10) · editing the time (2:01) · drag and drop in Week and Day (2:25) and Month (2:47) · resizing (2:58) · deleting (3:09) · filtering (3:17) · Subjects: rename, delete, merge (3:38) · Year (4:20) · Agenda and search (4:31) · Settings and dark mode (4:48) · saved after reload (5:08).
 
@@ -49,9 +45,9 @@ The [watch page](https://akibuzzaman-akib.github.io/my-calendar/docs/) has both 
 <details>
 <summary>Older 60-second promo video</summary>
 
-The first short promo with feature cards (60 seconds, before the 60fps demos): [1920×1080](https://akibuzzaman-akib.github.io/my-calendar/docs/video/promo-1920x1080.mp4) · [vertical 1080×1920](https://akibuzzaman-akib.github.io/my-calendar/docs/video/promo-vertical-1080x1920.mp4)
+The first short promo with feature cards (60 seconds, before the 60fps demos): [1920×1080](docs/video/promo-1920x1080.mp4) · [vertical 1080×1920](docs/video/promo-vertical-1080x1920.mp4)
 
-[![Older promo video](docs/video/promo-poster.jpg)](https://akibuzzaman-akib.github.io/my-calendar/docs/video/promo-1920x1080.mp4)
+[![Older promo video](docs/video/promo-poster.jpg)](docs/video/promo-1920x1080.mp4)
 
 </details>
 
@@ -95,13 +91,13 @@ Short MP4 recordings of real interactions, in [`docs/recordings`](docs/recording
 
 | Recording | What it shows |
 | --- | --- |
-| [create-event.mp4](https://akibuzzaman-akib.github.io/my-calendar/docs/recordings/create-event.mp4) | Creating "Chemistry practical exam" with a Subject, colour and the time picker |
-| [edit-time.mp4](https://akibuzzaman-akib.github.io/my-calendar/docs/recordings/edit-time.mp4) | Editing an event's time to 8:33 PM with the picker and the + button |
-| [switch-views.mp4](https://akibuzzaman-akib.github.io/my-calendar/docs/recordings/switch-views.mp4) | Month → Week → Day → Year → Agenda → Month |
-| [week-day-scroll.mp4](https://akibuzzaman-akib.github.io/my-calendar/docs/recordings/week-day-scroll.mp4) | Swiping Week and a busy Day sideways |
-| [manage-subjects.mp4](https://akibuzzaman-akib.github.io/my-calendar/docs/recordings/manage-subjects.mp4) | Renaming, merging and deleting Subjects |
-| [persist-reload.mp4](https://akibuzzaman-akib.github.io/my-calendar/docs/recordings/persist-reload.mp4) | Tapping an empty slot, saving, reloading: the event is still there |
-| [desktop-tour.mp4](https://akibuzzaman-akib.github.io/my-calendar/docs/recordings/desktop-tour.mp4) | Drag and drop, Day view, dark mode and Agenda on desktop |
+| [create-event.mp4](docs/recordings/create-event.mp4) | Creating "Chemistry practical exam" with a Subject, colour and the time picker |
+| [edit-time.mp4](docs/recordings/edit-time.mp4) | Editing an event's time to 8:33 PM with the picker and the + button |
+| [switch-views.mp4](docs/recordings/switch-views.mp4) | Month → Week → Day → Year → Agenda → Month |
+| [week-day-scroll.mp4](docs/recordings/week-day-scroll.mp4) | Swiping Week and a busy Day sideways |
+| [manage-subjects.mp4](docs/recordings/manage-subjects.mp4) | Renaming, merging and deleting Subjects |
+| [persist-reload.mp4](docs/recordings/persist-reload.mp4) | Tapping an empty slot, saving, reloading: the event is still there |
+| [desktop-tour.mp4](docs/recordings/desktop-tour.mp4) | Drag and drop, Day view, dark mode and Agenda on desktop |
 
 <p>
   <img src="docs/recordings/gif/create-event.gif" alt="Creating an event" width="200">
@@ -114,7 +110,7 @@ Short MP4 recordings of real interactions, in [`docs/recordings`](docs/recording
 
 ### Use it online
 
-Open **[akibuzzaman-akib.github.io/my-calendar/release/calendar.html](https://akibuzzaman-akib.github.io/my-calendar/release/calendar.html)** on your phone or computer. It is the same single HTML file, served by GitHub Pages. Events are saved in that browser.
+Open **[akibuzzaman-akib.github.io/my-calendar](https://akibuzzaman-akib.github.io/my-calendar/)** on your phone or computer. GitHub Pages serves only the app there: the same single HTML file as [`release/calendar.html`](release/calendar.html). Events are saved in that browser.
 
 ### Use it offline
 
@@ -140,7 +136,6 @@ Open `http://localhost:3000/calendar`.
 ## Documentation
 
 - [User guide](docs/GUIDE.md): every feature step by step, with screenshots, plus how the single-file build works.
-- [Demo video watch page](https://akibuzzaman-akib.github.io/my-calendar/docs/): both 60fps videos with chapters.
 - [Screenshots](docs/screenshots) · [Screen recordings](docs/recordings) · [Videos](docs/video)
 
 ## Tech stack
@@ -154,10 +149,11 @@ src/features/calendar/   calendar views, dialogs, Subjects, drag and drop, setti
 src/components/ui/       shared UI, including the floating date-time picker
 single/                  entry point and HTML template for the single-file build
 scripts/build-single.mjs single-file build script
-release/calendar.html    ready-made single-file build (also served on GitHub Pages)
-docs/                    guide, screenshots, recordings, videos and the watch page
-index.html               GitHub Pages start page (opens the watch page)
+release/calendar.html    ready-made single-file build
+docs/                    guide, screenshots, recordings and videos
 ```
+
+GitHub Pages is served from the separate `gh-pages` branch, which holds only the app (`index.html`, a copy of `release/calendar.html`). To update the live app, copy the new build there as `index.html` and push that branch.
 
 ## Author
 
