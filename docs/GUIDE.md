@@ -4,6 +4,10 @@ This guide walks through every feature of **My Calendar** by [AKIBUZZAMAN AKIB](
 
 The screenshots were taken in Chromium on an iPhone-sized screen (390 × 844) unless a caption says otherwise. Android (360 × 740) and desktop (1440 × 900) versions of every screenshot are in [`screenshots/android`](screenshots/android) and [`screenshots/desktop`](screenshots/desktop). Short screen recordings of each flow are in [`recordings`](recordings).
 
+**Demo videos:** two slow 60fps walkthroughs of every feature, a [desktop demo](https://akibuzzaman-akib.github.io/my-calendar/docs/video/demo-desktop-1920x1080-60fps.mp4) (5:27, 1920×1080) and a [phone demo](https://akibuzzaman-akib.github.io/my-calendar/docs/video/demo-phone-1080x1920-60fps.mp4) (2:48, 1080×1920). The [watch page](https://akibuzzaman-akib.github.io/my-calendar/docs/) plays both with chapter buttons.
+
+[![Desktop demo video](video/demo-desktop-poster.jpg)](https://akibuzzaman-akib.github.io/my-calendar/docs/video/demo-desktop-1920x1080-60fps.mp4)
+
 ## Contents
 
 1. [Open the calendar](#1-open-the-calendar)
@@ -22,8 +26,9 @@ The screenshots were taken in Chromium on an iPhone-sized screen (390 × 844) un
 
 ## 1. Open the calendar
 
-There are two ways to open it:
+There are three ways to open it:
 
+- **Online:** open [akibuzzaman-akib.github.io/my-calendar/release/calendar.html](https://akibuzzaman-akib.github.io/my-calendar/release/calendar.html). It is the single file served by GitHub Pages.
 - **The single file:** download [`release/calendar.html`](../release/calendar.html) and open it in a browser. Everything (code, styles and the Geist font) is inside that one file, so it needs no server and no internet.
 - **From source:** run the Next.js app (see [section 13](#13-run-the-project-from-source)) and open `http://localhost:3000/calendar`.
 
@@ -181,7 +186,7 @@ Things to know:
 2. Open it in Chrome, Edge, Firefox or Safari. It makes no network requests; it works with Wi-Fi off.
 3. Use it like the normal app. Events are saved in that browser.
 
-On phones, some browsers and file viewers do not keep `localStorage` for files opened from storage (`file://`). If your events disappear after closing, put the file on any static host, such as GitHub Pages or Netlify, and open it from there.
+On phones, some browsers and file viewers do not keep `localStorage` for files opened from storage (`file://`). If your events disappear after closing, use the online copy on [GitHub Pages](https://akibuzzaman-akib.github.io/my-calendar/release/calendar.html), or put the file on any other static host such as Netlify.
 
 The single file contains the calendar page only, not the documentation site from the original project.
 
